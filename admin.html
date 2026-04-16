@@ -22,14 +22,14 @@
 
     <div class="sb-section">
       <div class="sb-section-label">Admin</div>
-      <div class="sb-nav-item active" onclick="navigate('admin-events')" id="nav-admin-events">
-        <span class="icon">📋</span><span class="sb-nav-label">Manage Events</span>
+      <div class="sb-nav-item" onclick="navigate('analytics')" id="nav-analytics">
+        <span class="icon">📊</span><span class="sb-nav-label">Analytics</span>
       </div>
       <div class="sb-nav-item" onclick="navigate('scanner')" id="nav-scanner">
         <span class="icon">📷</span><span class="sb-nav-label">QR Scanner</span>
       </div>
-      <div class="sb-nav-item" onclick="navigate('analytics')" id="nav-analytics">
-        <span class="icon">📊</span><span class="sb-nav-label">Analytics</span>
+      <div class="sb-nav-item active" onclick="navigate('admin-events')" id="nav-admin-events">
+        <span class="icon">📋</span><span class="sb-nav-label">Manage Events</span>
       </div>
       <div class="sb-nav-item" onclick="navigate('attendees')" id="nav-attendees">
         <span class="icon">👥</span><span class="sb-nav-label">Attendees</span>
@@ -326,10 +326,19 @@ let currentUser = null;
 (function init() {
   currentUser = requireAuth('admin');
   if (!currentUser) return;
+
   document.getElementById('sb-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
   document.getElementById('sb-name').textContent   = currentUser.name;
+
   initModalListeners();
-  navigate('admin-events');
+
+  // WAIT FOR FULL PAGE RENDER BEFORE NAVIGATING
+  window.onload = () => {
+    setTimeout(() => {
+      navigate('analytics');
+      renderAnalytics();
+    }, 100);
+  };
 })();
 
 function doLogout() {
@@ -341,7 +350,21 @@ function doLogout() {
 window.onNavigate = function(page) {
   if (page !== 'scanner') stopScanner();
   if (page === 'admin-events') renderAdminEvents();
-  if (page === 'analytics')    renderAnalytics();
+  window.onNavigate = function(page) {
+  if (page !== 'scanner') stopScanner();
+
+  if (page === 'admin-events') renderAdminEvents();
+
+  if (page === 'analytics') {
+    setTimeout(() => {
+      renderAnalytics();
+    }, 80);
+  }
+
+  if (page === 'attendees') renderAttendees();
+
+  if (page === 'scanner') resetScannerUI();
+};
   if (page === 'attendees')    renderAttendees();
   if (page === 'scanner')      resetScannerUI();
 };
@@ -870,6 +893,7 @@ function renderAnalytics() {
 }
 
 function buildCharts() {
+  if (!document.getElementById('sales-chart')) return;
   Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
   charts = {};
 
