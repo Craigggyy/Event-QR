@@ -6,8 +6,8 @@
 /* ── DATA STORE (localStorage-backed) ───────────────────── */
 const STORE = {
   users: [
-    { id: 'u1', email: 'admin', password: '123', name: 'Admin User',  role: 'admin' },
-    { id: 'u2', email: 'user',  password: '123',  name: 'Alex Chen',   role: 'user'  }
+    { id: 'u1', email: 'admin@demo.com', password: 'admin123', name: 'Admin User',  role: 'admin' },
+    { id: 'u2', email: 'user@demo.com',  password: 'user123',  name: 'Alex Chen',   role: 'user'  }
   ],
   events: [
     {
