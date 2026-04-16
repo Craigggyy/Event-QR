@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EventPass — Admin Dashboard</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+</head>
+<body>
+
+<!-- ═══════════════ APP SHELL ═══════════════ -->
+<div id="shell">
+
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">🎫</div>
+      <div class="sb-logo-text">Event<span>Pass</span></div>
+    </div>
+    <button class="sb-toggle" onclick="toggleSidebar()">☰</button>
+
+    <div class="sb-section">
+      <div class="sb-section-label">Admin</div>
+      <div class="sb-nav-item active" onclick="navigate('admin-events')" id="nav-admin-events">
+        <span class="icon">📋</span><span class="sb-nav-label">Manage Events</span>
+      </div>
+      <div class="sb-nav-item" onclick="navigate('scanner')" id="nav-scanner">
+        <span class="icon">📷</span><span class="sb-nav-label">QR Scanner</span>
+      </div>
+      <div class="sb-nav-item" onclick="navigate('analytics')" id="nav-analytics">
+        <span class="icon">📊</span><span class="sb-nav-label">Analytics</span>
+      </div>
+      <div class="sb-nav-item" onclick="navigate('attendees')" id="nav-attendees">
+        <span class="icon">👥</span><span class="sb-nav-label">Attendees</span>
+      </div>
+    </div>
+
+    <div class="sb-bottom">
+      <div class="sb-user">
+        <div class="sb-user-avatar" id="sb-avatar">A</div>
+        <div class="sb-user-info">
+          <div class="sb-user-name" id="sb-name">Admin</div>
+          <div class="sb-user-role">Event Organizer</div>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="doLogout()">⬡ Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- TOPBAR -->
+    <div id="topbar">
+      <div class="topbar-title" id="topbar-title">Manage Events</div>
+      <div class="topbar-right">
+        <div class="topbar-badge">Admin</div>
+        <button class="btn btn-primary btn-sm" onclick="openCreateEvent()">+ New Event</button>
+      </div>
+    </div>
+
+    <!-- ── PAGE: MANAGE EVENTS ── -->
+    <div class="page active" id="page-admin-events">
+      <div class="sec-header">
+        <div>
+          <div class="sec-title">Events</div>
+          <div class="sec-sub">Create, edit and track your events</div>
+        </div>
+        <button class="btn btn-primary" onclick="openCreateEvent()">+ New Event</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Event</th><th>Date</th><th>Category</th>
+              <th>Seats Sold</th><th>Revenue</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-events-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── PAGE: QR SCANNER ── -->
+    <div class="page" id="page-scanner">
+      <div class="scanner-container">
+        <div style="font-size:24px;margin-bottom:8px">📷</div>
+        <h2 style="font-size:22px;font-weight:800;margin-bottom:6px">QR Check-In Scanner</h2>
+        <p style="font-size:14px;color:var(--t2);margin-bottom:20px">
+          Point your camera at an attendee's ticket QR code to validate and check them in
+        </p>
+
+        <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px">
+          <button class="btn btn-primary" onclick="startScanner()" id="scan-start-btn">▶ Start Camera</button>
+          <button class="btn btn-ghost" onclick="stopScanner()" id="scan-stop-btn" style="display:none">■ Stop Camera</button>
+        </div>
+
+        <div class="video-wrapper" id="video-wrapper" style="display:none">
+          <video id="scanner-video" autoplay playsinline muted></video>
+          <canvas id="scanner-canvas" style="display:none"></canvas>
+          <div class="scanner-overlay">
+            <div class="scanner-frame">
+              <div class="scanner-frame-tl"></div>
+              <div class="scanner-frame-br"></div>
+              <div class="scan-line"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="scan-result-area"></div>
+
+        <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
+          <p style="font-size:13px;color:var(--t3);margin-bottom:10px">Or enter ticket ID manually:</p>
+          <div style="display:flex;gap:10px">
+            <input class="form-input" id="manual-ticket-id" placeholder="TICKET-XXXXX" style="flex:1"
+                   onkeydown="if(event.key==='Enter') manualCheckIn()">
+            <button class="btn btn-primary" onclick="manualCheckIn()">Check In</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: ANALYTICS ── -->
+    <div class="page" id="page-analytics">
+      <div class="stats-row" id="analytics-stats"></div>
+      <div class="charts-grid">
+        <div class="chart-card chart-card-full">
+          <div class="chart-title">Ticket Sales Over Time</div>
+          <div class="chart-sub">Daily ticket purchases (cumulative)</div>
+          <canvas id="sales-chart" height="80"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Sales by Category</div>
+          <div class="chart-sub">Tickets sold per event category</div>
+          <canvas id="category-chart" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Check-In Rate by Event</div>
+          <div class="chart-sub">Seats sold vs attendees checked in</div>
+          <canvas id="checkin-chart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: ATTENDEES ── -->
+    <div class="page" id="page-attendees">
+      <div class="sec-header">
+        <div>
+          <div class="sec-title">Attendees</div>
+          <div class="sec-sub">All ticket holders and check-in status</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <select class="form-input form-select" id="attendee-filter-event" style="width:220px" onchange="renderAttendees()">
+            <option value="all">All Events</option>
+          </select>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Attendee</th><th>Event</th><th>Type</th>
+              <th>Seat</th><th>Ticket ID</th><th>Purchase Date</th><th>Check-In</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="attendees-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- ═══════════════ MODALS ═══════════════ -->
+
+<!-- CREATE / EDIT EVENT MODAL -->
+<div class="modal-bg" id="event-form-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="event-form-title">✨ Create New Event</div>
+      <div class="modal-close" onclick="closeModal('event-form-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-event-id">
+      <div class="form-grid">
+        <div class="form-group form-full">
+          <label class="form-label">Event Title</label>
+          <input class="form-input" id="ef-title" placeholder="e.g., Manila Jazz Festival 2025">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-input form-select" id="ef-category">
+            <option>Music</option><option>Tech</option><option>Art</option>
+            <option>Food</option><option>Sports</option><option>Business</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Event Emoji / Icon</label>
+          <input class="form-input" id="ef-emoji" placeholder="🎵" maxlength="4">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" id="ef-date" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Time</label>
+          <input class="form-input" id="ef-time" type="time">
+        </div>
+        <div class="form-group form-full">
+          <label class="form-label">Venue / Location</label>
+          <input class="form-input" id="ef-venue" placeholder="e.g., SM Mall of Asia Arena, Pasay City">
+        </div>
+        <div class="form-group form-full">
+          <label class="form-label">Description</label>
+          <textarea class="form-input" id="ef-desc" rows="3" placeholder="Tell attendees about this event…"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">General Ticket Price (₱)</label>
+          <input class="form-input" id="ef-price" type="number" min="0" placeholder="0 for free">
+        </div>
+        <div class="form-group">
+          <label class="form-label">VIP Ticket Price (₱)</label>
+          <input class="form-input" id="ef-vip-price" type="number" min="0" placeholder="0 to disable VIP">
+          <div class="form-hint">VIP seats are Rows A & B (first 20 seats)</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Accent Color</label>
+          <div class="color-options" id="ef-colors">
+            <div class="color-swatch selected" style="background:#6c5ce7" data-color="#6c5ce7" onclick="selectColor(this)"></div>
+            <div class="color-swatch" style="background:#0984e3" data-color="#0984e3" onclick="selectColor(this)"></div>
+            <div class="color-swatch" style="background:#e17055" data-color="#e17055" onclick="selectColor(this)"></div>
+            <div class="color-swatch" style="background:#00cec9" data-color="#00cec9" onclick="selectColor(this)"></div>
+            <div class="color-swatch" style="background:#fdcb6e" data-color="#fdcb6e" onclick="selectColor(this)"></div>
+            <div class="color-swatch" style="background:#fd79a8" data-color="#fd79a8" onclick="selectColor(this)"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="color:var(--t3)">Total Capacity</label>
+          <div class="form-input" style="background:var(--bg3);cursor:default;color:var(--t3)">100 seats (fixed — 10 rows × 10 seats)</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('event-form-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEvent()">Save Event ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- SEAT MAP VIEWER MODAL (admin read-only) -->
+<div class="modal-bg" id="seatmap-view-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title">💺 Seat Map</div>
+      <div class="modal-close" onclick="closeModal('seatmap-view-modal')">✕</div>
+    </div>
+    <div class="modal-body" id="seatmap-view-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('seatmap-view-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast-container"></div>
+
+<!-- ═══════════════ SCRIPTS ═══════════════ -->
+<script src="functions.js"></script>
+<script>
+/* ── Auth guard & init ──────────────────────────────────── */
+window.PAGE_TITLES = {
+  'admin-events': 'Manage Events',
+  'scanner':      'QR Check-In Scanner',
+  'analytics':    'Analytics Dashboard',
+  'attendees':    'Attendees'
+};
+
+let currentUser = null;
+
+(function init() {
+  currentUser = requireAuth('admin');
+  if (!currentUser) return;
+  document.getElementById('sb-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+  document.getElementById('sb-name').textContent   = currentUser.name;
+  initModalListeners();
+  navigate('admin-events');
+})();
+
+function doLogout() {
+  stopScanner();
+  clearSession();
+  window.location.href = 'index.html';
+}
+
+window.onNavigate = function(page) {
+  if (page !== 'scanner') stopScanner();
+  if (page === 'admin-events') renderAdminEvents();
+  if (page === 'analytics')    renderAnalytics();
+  if (page === 'attendees')    renderAttendees();
+};
+
+/* ── MANAGE EVENTS ──────────────────────────────────────── */
+function renderAdminEvents() {
+  const tbody = document.getElementById('admin-events-tbody');
+  if (!STORE.events.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--t3)">No events yet. Create your first event!</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = STORE.events.map(e => {
+    const takenSeats = getTakenSeats(e.id);
+    const sold = takenSeats.size;
+    const revenue = STORE.tickets
+      .filter(t => t.eventId === e.id)
+      .reduce((sum, t) => sum + (t.type === 'vip' ? e.vipPrice : e.price), 0);
+    const pct = Math.round((sold / 100) * 100);
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;padding:2px 0">
+          <span style="font-size:24px">${e.emoji}</span>
+          <div>
+            <div style="font-weight:600;font-size:13px">${e.title}</div>
+            <div style="font-size:11px;color:var(--t3)">${e.venue.split(',')[0]}</div>
+          </div>
+        </div>
+      </td>
+      <td>${formatDate(e.date)}</td>
+      <td><span class="tag tag-purple">${e.category}</span></td>
+      <td>
+        <div style="font-size:13px;font-weight:600">${sold}/100</div>
+        <div class="progress-bar" style="width:100px">
+          <div class="progress-fill" style="width:${pct}%;background:${pct>90?'var(--err)':pct>60?'var(--warn)':'var(--grad)'}"></div>
+        </div>
+      </td>
+      <td style="font-weight:700;color:var(--ok)">₱${revenue.toLocaleString()}</td>
+      <td><span class="tag ${sold >= 100 ? 'tag-err' : 'tag-teal'}">${sold >= 100 ? 'Sold Out' : 'On Sale'}</span></td>
+      <td>
+        <div class="table-actions">
+          <button class="btn btn-sm btn-ghost" onclick="viewSeatMap('${e.id}')">💺 Seats</button>
+          <button class="btn btn-sm btn-ghost" onclick="openEditEvent('${e.id}')">✏️ Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteEvent('${e.id}')">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function viewSeatMap(eventId) {
+  const e = STORE.events.find(ev => ev.id === eventId);
+  if (!e) return;
+  const takenSeats = getTakenSeats(eventId);
+  const checkedIn  = new Set(STORE.tickets.filter(t => t.eventId === eventId && t.status === 'used').map(t => t.seat));
+
+  let colHeaders = `<div class="seat-number-cols">
+    <div class="seat-col-label"></div>
+    ${[1,2,3,4,5,6,7,8,9,10].map(n => `<div class="seat-col-label">${n}</div>`).join('')}
+  </div>`;
+
+  let gridHTML = ROWS.map(row => {
+    const isVIPRow = isSeatVIP(row);
+    let cells = `<div class="seat-row-label">${row}</div>`;
+    for (let col = 1; col <= 10; col++) {
+      const seatId = getSeatId(row, col);
+      const isTaken = takenSeats.has(seatId);
+      const isChecked = checkedIn.has(seatId);
+      const ticketInfo = isTaken ? STORE.tickets.find(t => t.eventId === eventId && t.seat === seatId) : null;
+      let cls = 'seat-btn';
+      if (isVIPRow) cls += ' vip';
+      if (isTaken)  cls += ' taken';
+      if (isChecked) cls = cls.replace('taken', '') + ' selected'; // reuse "selected" for checked-in style
+
+      const title = isTaken
+        ? `${seatId} — ${ticketInfo?.userName || 'Taken'} ${isChecked ? '(Checked In)' : '(Not checked in)'}`
+        : `${seatId} — Available`;
+
+      cells += `<button class="${cls}" title="${title}" disabled style="${isChecked ? 'background:var(--ok);border-color:var(--ok);color:#000;opacity:0.9' : ''}">${isChecked ? '✓' : isTaken ? '●' : col}</button>`;
+    }
+    return cells;
+  }).join('');
+
+  document.getElementById('seatmap-view-body').innerHTML = `
+    <div style="margin-bottom:12px;font-size:14px;font-weight:700">${e.emoji} ${e.title}</div>
+    <div class="seat-legend" style="margin-bottom:16px">
+      <div class="seat-legend-item"><div class="seat-legend-dot" style="background:var(--bg3);border:1px solid var(--border)"></div> Available</div>
+      <div class="seat-legend-item"><div class="seat-legend-dot" style="background:rgba(225,112,85,0.3);border:1px solid rgba(225,112,85,0.4)"></div> Sold</div>
+      <div class="seat-legend-item"><div class="seat-legend-dot" style="background:var(--ok)"></div> Checked In</div>
+      <div class="seat-legend-item"><div class="seat-legend-dot" style="background:rgba(253,203,110,0.3);border:1px solid rgba(253,203,110,0.4)"></div> VIP row</div>
+    </div>
+    <div class="seat-map-stage">🎭 STAGE / SCREEN</div>
+    ${colHeaders}
+    <div class="seat-grid">${gridHTML}</div>
+    <div style="margin-top:16px;display:flex;gap:16px;font-size:13px;color:var(--t2)">
+      <span>Total seats: <strong style="color:var(--t1)">100</strong></span>
+      <span>Sold: <strong style="color:var(--warn)">${takenSeats.size}</strong></span>
+      <span>Checked in: <strong style="color:var(--ok)">${checkedIn.size}</strong></span>
+      <span>Available: <strong style="color:var(--p2)">${100 - takenSeats.size}</strong></span>
+    </div>`;
+
+  openModal('seatmap-view-modal');
+}
+
+/* ── CREATE / EDIT EVENT ─────────────────────────────────── */
+function openCreateEvent() {
+  document.getElementById('event-form-title').textContent = '✨ Create New Event';
+  document.getElementById('edit-event-id').value = '';
+  ['ef-title','ef-emoji','ef-date','ef-time','ef-venue','ef-desc','ef-price','ef-vip-price']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('ef-category').value = 'Music';
+  document.querySelectorAll('.color-swatch').forEach((s, i) => s.classList.toggle('selected', i === 0));
+  openModal('event-form-modal');
+}
+
+function openEditEvent(id) {
+  const e = STORE.events.find(ev => ev.id === id);
+  if (!e) return;
+  document.getElementById('event-form-title').textContent = '✏️ Edit Event';
+  document.getElementById('edit-event-id').value   = id;
+  document.getElementById('ef-title').value         = e.title;
+  document.getElementById('ef-emoji').value         = e.emoji;
+  document.getElementById('ef-category').value      = e.category;
+  document.getElementById('ef-date').value          = e.date;
+  document.getElementById('ef-time').value          = e.time;
+  document.getElementById('ef-venue').value         = e.venue;
+  document.getElementById('ef-desc').value          = e.desc;
+  document.getElementById('ef-price').value         = e.price;
+  document.getElementById('ef-vip-price').value     = e.vipPrice;
+  document.querySelectorAll('.color-swatch').forEach(s =>
+    s.classList.toggle('selected', s.dataset.color === e.color)
+  );
+  openModal('event-form-modal');
+}
+
+function selectColor(el) {
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function saveEvent() {
+  const id    = document.getElementById('edit-event-id').value;
+  const title = document.getElementById('ef-title').value.trim();
+  if (!title) { toast('Event title is required', 'err'); return; }
+
+  const selected = document.querySelector('.color-swatch.selected');
+  const eventData = {
+    title,
+    emoji:    document.getElementById('ef-emoji').value || '🎉',
+    category: document.getElementById('ef-category').value,
+    date:     document.getElementById('ef-date').value,
+    time:     document.getElementById('ef-time').value,
+    venue:    document.getElementById('ef-venue').value,
+    desc:     document.getElementById('ef-desc').value,
+    price:    parseInt(document.getElementById('ef-price').value)    || 0,
+    vipPrice: parseInt(document.getElementById('ef-vip-price').value) || 0,
+    capacity: 100,
+    color:    selected ? selected.dataset.color : '#6c5ce7'
+  };
+
+  if (id) {
+    const idx = STORE.events.findIndex(e => e.id === id);
+    STORE.events[idx] = { ...STORE.events[idx], ...eventData };
+    toast('Event updated!', 'ok');
+  } else {
+    STORE.events.push({ id: 'e' + Date.now(), sold: 0, ...eventData });
+    toast('Event created!', 'ok');
+  }
+  saveStore();
+  closeModal('event-form-modal');
+  renderAdminEvents();
+}
+
+function deleteEvent(id) {
+  if (!confirm('Delete this event? All associated tickets will also be removed.')) return;
+  STORE.events  = STORE.events.filter(e => e.id !== id);
+  STORE.tickets = STORE.tickets.filter(t => t.eventId !== id);
+  saveStore();
+  renderAdminEvents();
+  toast('Event deleted', 'warn');
+}
+
+/* ── QR SCANNER ─────────────────────────────────────────── */
+let scannerStream   = null;
+let scannerInterval = null;
+let lastScanTime    = 0;
+
+async function startScanner() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    scannerStream = stream;
+    const video = document.getElementById('scanner-video');
+    video.srcObject = stream;
+    document.getElementById('video-wrapper').style.display  = 'block';
+    document.getElementById('scan-start-btn').style.display = 'none';
+    document.getElementById('scan-stop-btn').style.display  = 'flex';
+    document.getElementById('scan-result-area').innerHTML   = '';
+
+    const canvas = document.getElementById('scanner-canvas');
+    const ctx    = canvas.getContext('2d');
+
+    scannerInterval = setInterval(() => {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width  = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+        if (code) processQR(code.data);
+      }
+    }, 300);
+  } catch(e) {
+    toast('Camera access denied. Use manual entry below.', 'err');
+  }
+}
+
+function stopScanner() {
+  if (scannerStream) { scannerStream.getTracks().forEach(t => t.stop()); scannerStream = null; }
+  if (scannerInterval) { clearInterval(scannerInterval); scannerInterval = null; }
+  const vw = document.getElementById('video-wrapper');
+  const sb = document.getElementById('scan-start-btn');
+  const ss = document.getElementById('scan-stop-btn');
+  if (vw) vw.style.display = 'none';
+  if (sb) sb.style.display = 'flex';
+  if (ss) ss.style.display = 'none';
+}
+
+function processQR(data) {
+  const now = Date.now();
+  if (now - lastScanTime < 3000) return;
+  lastScanTime = now;
+
+  let parsed;
+  try { parsed = JSON.parse(data); } catch(e) { showScanResult('invalid', null); return; }
+
+  const ticket = STORE.tickets.find(t => t.id === parsed.ticketId);
+  if (!ticket) { showScanResult('invalid', null); return; }
+
+  const event = STORE.events.find(e => e.id === ticket.eventId);
+
+  if (ticket.status === 'used') {
+    showScanResult('used', ticket, event);
+    return;
+  }
+
+  ticket.status      = 'used';
+  ticket.checkInTime = new Date().toISOString();
+  saveStore();
+  showScanResult('valid', ticket, event);
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+}
+
+function showScanResult(status, ticket, event) {
+  const area = document.getElementById('scan-result-area');
+  const cfgs = {
+    valid:   { cls: 'valid',   icon: '✅', title: 'Check-In Successful!',
+                detail: ticket ? `${ticket.userName} · ${event?.title} · Seat ${ticket.seat} · ${ticket.type === 'vip' ? '⭐ VIP' : 'General'}` : '' },
+    used:    { cls: 'used',    icon: '⚠️', title: 'Already Checked In',
+                detail: ticket ? `${ticket.userName} · Seat ${ticket.seat} · checked in at ${ticket.checkInTime ? new Date(ticket.checkInTime).toLocaleTimeString() : 'earlier'}` : '' },
+    invalid: { cls: 'invalid', icon: '❌', title: 'Invalid Ticket',
+                detail: 'This QR code is not recognized in our system.' }
+  };
+  const c = cfgs[status];
+  area.innerHTML = `
+    <div class="scan-result ${c.cls}">
+      <span class="scan-result-icon">${c.icon}</span>
+      <div class="scan-result-name">${c.title}</div>
+      <div class="scan-result-detail">${c.detail}</div>
+    </div>`;
+  toast(c.title, status === 'valid' ? 'ok' : status === 'used' ? 'warn' : 'err');
+}
+
+function manualCheckIn() {
+  const id     = document.getElementById('manual-ticket-id').value.trim().toUpperCase();
+  if (!id) { toast('Please enter a ticket ID', 'err'); return; }
+  const ticket = STORE.tickets.find(t => t.id === id);
+  if (!ticket) { showScanResult('invalid', null); return; }
+  const event  = STORE.events.find(e => e.id === ticket.eventId);
+  if (ticket.status === 'used') { showScanResult('used', ticket, event); return; }
+  ticket.status      = 'used';
+  ticket.checkInTime = new Date().toISOString();
+  saveStore();
+  showScanResult('valid', ticket, event);
+  document.getElementById('manual-ticket-id').value = '';
+}
+
+/* ── ANALYTICS ──────────────────────────────────────────── */
+let charts = {};
+
+function renderAnalytics() {
+  const totalRevenue = STORE.tickets.reduce((sum, t) => {
+    const e = STORE.events.find(ev => ev.id === t.eventId);
+    return e ? sum + (t.type === 'vip' ? e.vipPrice : e.price) : sum;
+  }, 0);
+  const totalTickets  = STORE.tickets.length;
+  const checkedIn     = STORE.tickets.filter(t => t.status === 'used').length;
+
+  document.getElementById('analytics-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-top"><div class="stat-icon purple">💰</div><span class="stat-change up">Revenue</span></div>
+      <div class="stat-value">₱${totalRevenue.toLocaleString()}</div>
+      <div class="stat-label">Total Revenue</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top"><div class="stat-icon blue">🎫</div><span class="stat-change up">+${totalTickets}</span></div>
+      <div class="stat-value">${totalTickets}</div>
+      <div class="stat-label">Tickets Sold</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top"><div class="stat-icon teal">✅</div><span class="stat-change up">${checkedIn}</span></div>
+      <div class="stat-value">${checkedIn}</div>
+      <div class="stat-label">Checked In</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top"><div class="stat-icon amber">📅</div><span class="stat-change up">${STORE.events.length}</span></div>
+      <div class="stat-value">${STORE.events.length}</div>
+      <div class="stat-label">Total Events</div>
+    </div>`;
+
+  buildCharts();
+}
+
+function buildCharts() {
+  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
+  charts = {};
+
+  // Sales over time (last 30 days)
+  const days = [], salesData = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days.push(d.toLocaleDateString('en', { month: 'short', day: 'numeric' }));
+    salesData.push(0);
+  }
+  STORE.tickets.forEach(t => {
+    const d     = new Date(t.purchaseDate);
+    const label = d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+    const idx   = days.indexOf(label);
+    if (idx >= 0) salesData[idx]++;
+  });
+
+  charts.sales = new Chart(document.getElementById('sales-chart'), {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [{ label: 'Tickets Sold', data: salesData, fill: true,
+        borderColor: 'rgb(108,92,231)', backgroundColor: 'rgba(108,92,231,0.08)',
+        borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.4 }]
+    },
+    options: {
+      responsive: true, interaction: { intersect: false, mode: 'index' },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(108,92,231,0.07)' }, ticks: { color: '#9490c4', maxTicksLimit: 8, font: { size: 11 } } },
+        y: { grid: { color: 'rgba(108,92,231,0.07)' }, ticks: { color: '#9490c4', font: { size: 11 } }, beginAtZero: true }
+      }
+    }
+  });
+
+  // Category donut
+  const cats = {};
+  STORE.events.forEach(e => { cats[e.category] = (cats[e.category] || 0) + getTakenSeats(e.id).size; });
+  charts.cat = new Chart(document.getElementById('category-chart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(cats),
+      datasets: [{
+        data: Object.values(cats),
+        backgroundColor: ['rgba(108,92,231,0.8)','rgba(9,132,227,0.8)','rgba(0,206,201,0.8)','rgba(253,203,110,0.8)','rgba(225,112,85,0.8)','rgba(253,121,168,0.8)'],
+        borderColor: '#0d0d1a', borderWidth: 3
+      }]
+    },
+    options: {
+      responsive: true, cutout: '65%',
+      plugins: { legend: { position: 'bottom', labels: { color: '#9490c4', padding: 16, font: { size: 12 } } } }
+    }
+  });
+
+  // Check-in bar
+  const evNames  = STORE.events.slice(0, 6).map(e => e.title.substring(0, 16) + '…');
+  const evSold   = STORE.events.slice(0, 6).map(e => getTakenSeats(e.id).size);
+  const evChkIn  = STORE.events.slice(0, 6).map(e =>
+    STORE.tickets.filter(t => t.eventId === e.id && t.status === 'used').length);
+
+  charts.checkin = new Chart(document.getElementById('checkin-chart'), {
+    type: 'bar',
+    data: {
+      labels: evNames,
+      datasets: [
+        { label: 'Seats Sold', data: evSold,  backgroundColor: 'rgba(108,92,231,0.6)', borderRadius: 6, borderSkipped: false },
+        { label: 'Checked In', data: evChkIn, backgroundColor: 'rgba(0,206,201,0.6)',  borderRadius: 6, borderSkipped: false }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#9490c4', font: { size: 12 } } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#9490c4', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(108,92,231,0.07)' }, ticks: { color: '#9490c4', font: { size: 11 } }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+/* ── ATTENDEES ──────────────────────────────────────────── */
+function renderAttendees() {
+  const sel = document.getElementById('attendee-filter-event');
+  sel.innerHTML = '<option value="all">All Events</option>' +
+    STORE.events.map(e => `<option value="${e.id}">${e.title}</option>`).join('');
+
+  const filterVal = sel.value;
+  const tickets   = filterVal === 'all'
+    ? STORE.tickets
+    : STORE.tickets.filter(t => t.eventId === filterVal);
+
+  const tbody = document.getElementById('attendees-tbody');
+  if (!tickets.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--t3)">No attendees found</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = tickets.map(t => {
+    const ev = STORE.events.find(e => e.id === t.eventId) || { title: 'Unknown', emoji: '🎫' };
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">
+            ${t.userName.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:600">${t.userName}</div>
+            <div style="font-size:11px;color:var(--t3)">${t.userEmail}</div>
+          </div>
+        </div>
+      </td>
+      <td><span style="font-size:16px">${ev.emoji}</span> <span style="font-size:12px">${ev.title?.substring(0, 22)}…</span></td>
+      <td><span class="tag ${t.type === 'vip' ? 'tag-warn' : 'tag-purple'}">${t.type === 'vip' ? '⭐ VIP' : 'General'}</span></td>
+      <td><strong style="font-size:15px;color:var(--p2)">${t.seat}</strong></td>
+      <td><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3)">${t.id}</span></td>
+      <td style="font-size:12px;color:var(--t2)">${new Date(t.purchaseDate).toLocaleDateString()}</td>
+      <td>
+        <span class="tag ${t.status === 'used' ? 'tag-teal' : 'tag-warn'}">
+          ${t.status === 'used' ? '✓ Checked In' : '⏳ Pending'}
+        </span>
+        ${t.status === 'used' && t.checkInTime
+          ? `<div style="font-size:10px;color:var(--t3);margin-top:2px">${new Date(t.checkInTime).toLocaleTimeString()}</div>`
+          : ''}
+      </td>
+      <td>
+        <div class="table-actions">
+          ${t.status !== 'used'
+            ? `<button class="btn btn-sm btn-success" onclick="manualCheckInById('${t.id}')">✓ Check In</button>`
+            : ''}
+          <button class="btn btn-sm btn-danger" onclick="revokeTicket('${t.id}')">Revoke</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function manualCheckInById(id) {
+  const ticket = STORE.tickets.find(t => t.id === id);
+  if (!ticket) return;
+  ticket.status      = 'used';
+  ticket.checkInTime = new Date().toISOString();
+  saveStore();
+  renderAttendees();
+  toast('Attendee checked in!', 'ok');
+}
+
+function revokeTicket(id) {
+  if (!confirm('Revoke this ticket? The seat will become available again.')) return;
+  STORE.tickets = STORE.tickets.filter(t => t.id !== id);
+  saveStore();
+  renderAttendees();
+  toast('Ticket revoked', 'warn');
+}
+</script>
+</body>
+</html>
