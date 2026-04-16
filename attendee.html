@@ -87,14 +87,15 @@
 <div class="modal-bg" id="seat-modal">
   <div class="modal modal-lg">
     <div class="modal-header">
-      <div class="modal-title">💺 Choose Your Seat</div>
+      <div class="modal-title">💺 Choose Your Seats</div>
       <div class="modal-close" onclick="closeModal('seat-modal')">✕</div>
     </div>
     <div class="modal-body" id="seat-modal-body"></div>
     <div class="modal-footer">
+      <div id="seat-selection-status" style="font-size: 13px; color: var(--t3); flex: 1;">Selected 0 of 1</div>
       <button class="btn btn-ghost" onclick="closeModal('seat-modal')">Cancel</button>
       <button class="btn btn-primary" id="confirm-seat-btn" onclick="confirmSeatAndPay()" disabled>
-        Confirm Seat & Pay →
+        Confirm Selection & Pay →
       </button>
     </div>
   </div>
@@ -115,7 +116,7 @@
         <div class="pm-btn" onclick="selectPM(this,'gcash')"><span class="pm-icon">📱</span>GCash</div>
       </div>
 
-      <div id="card-form" class="pm-form">
+      <div id="card-form" class="pm-content">
         <div class="form-group">
           <label class="form-label">Cardholder Name</label>
           <input class="form-input" id="card-name" placeholder="Alex Chen">
@@ -136,31 +137,28 @@
         </div>
       </div>
 
-      <div id="paypal-form" class="pm-form" style="display:none">
+      <div id="paypal-form" class="pm-content" style="display:none">
         <div class="form-group">
-          <label class="form-label">PayPal Email</label>
-          <input type="email" class="form-input" id="paypal-email" placeholder="alex@example.com">
+          <label class="form-label">PayPal Email Address</label>
+          <input type="email" class="form-input" id="paypal-email" placeholder="example@email.com">
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>
-          <input type="password" class="form-input" id="paypal-pass" placeholder="••••••••">
+          <input type="password" class="form-input" id="paypal-password" placeholder="••••••••">
         </div>
-        <p style="font-size:11px;color:var(--t3);text-align:center">You will be redirected to PayPal to authorize this payment.</p>
       </div>
 
-      <div id="gcash-form" class="pm-form" style="display:none">
+      <div id="gcash-form" class="pm-content" style="display:none">
         <div class="form-group">
           <label class="form-label">GCash Mobile Number</label>
-          <input type="text" class="form-input" id="gcash-num" placeholder="09XX XXX XXXX" maxlength="11">
+          <input type="text" class="form-input" id="gcash-phone" placeholder="09XX XXX XXXX" maxlength="11">
         </div>
         <div class="form-group">
           <label class="form-label">4-Digit MPIN</label>
           <input type="password" class="form-input" id="gcash-mpin" placeholder="••••" maxlength="4">
         </div>
-        <p style="font-size:11px;color:var(--t3);text-align:center">Please ensure you have sufficient balance in your GCash wallet.</p>
       </div>
 
-      <div class="security-note">🔒 Your payment is secured with 256-bit SSL encryption</div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('payment-modal')">Cancel</button>
@@ -188,11 +186,7 @@
 <script src="functions.js"></script>
 <script>
 /* ── Auth guard & init ──────────────────────────────────── */
-window.PAGE_TITLES = {
-  'events': 'Browse Events',
-  'my-tickets': 'My Tickets'
-};
-
+window.PAGE_TITLES = { 'events': 'Browse Events', 'my-tickets': 'My Tickets' };
 let currentUser = null;
 
 (function init() {
@@ -216,7 +210,6 @@ window.onNavigate = function(page) {
 
 /* ── FILTER & SEARCH ────────────────────────────────────── */
 let currentFilter = 'all';
-
 function setFilter(f, el) {
   currentFilter = f;
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
@@ -239,17 +232,12 @@ function renderEvents() { filterEvents(); }
 function renderEventCards(events) {
   const grid = document.getElementById('events-grid');
   if (!events.length) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-      <div class="empty-icon">🔍</div>
-      <div class="empty-title">No events found</div>
-      <div class="empty-sub">Try a different search or filter</div>
-    </div>`;
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-title">No events found</div></div>`;
     return;
   }
   grid.innerHTML = events.map(e => {
     const takenCount = getTakenSeats(e.id).size;
     const remaining  = 100 - takenCount;
-    const pct = Math.round((takenCount / 100) * 100);
     const soldOut = remaining <= 0;
     const d = new Date(e.date);
     const month = d.toLocaleString('default', { month: 'short' }).toUpperCase();
@@ -258,28 +246,19 @@ function renderEventCards(events) {
     <div class="event-card" onclick="openEventDetail('${e.id}')">
       <div class="event-thumb" style="background:linear-gradient(135deg,${e.color}22,${e.color}44)">
         <span style="position:relative;z-index:1;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5))">${e.emoji}</span>
-        <div class="event-thumb-overlay"></div>
         <div class="event-category-badge">${e.category}</div>
         <div class="event-date-badge">${month}<br>${day}</div>
-        ${soldOut ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#e17055;letter-spacing:2px;z-index:2">SOLD OUT</div>` : ''}
+        ${soldOut ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;z-index:2">SOLD OUT</div>` : ''}
       </div>
       <div class="event-body">
         <div class="event-title">${e.title}</div>
         <div class="event-meta">
-          <div class="event-meta-item">📅 ${formatDate(e.date)} · ${e.time}</div>
           <div class="event-meta-item">📍 ${e.venue}</div>
         </div>
         <div class="event-footer">
-          <div>
-            ${e.price === 0
-              ? `<div class="event-price-free">FREE</div>`
-              : `<div class="event-price">₱${e.price.toLocaleString()}</div>`}
-          </div>
+          <div>${e.price === 0 ? `<div class="event-price-free">FREE</div>` : `<div class="event-price">₱${e.price.toLocaleString()}</div>`}</div>
           <div style="text-align:right">
-            <div class="event-capacity">${remaining}/100 seats left</div>
-            <div class="capacity-bar" style="width:80px">
-              <div class="capacity-fill" style="width:${pct}%;background:${pct>90?'var(--err)':pct>60?'var(--warn)':'var(--grad)'}"></div>
-            </div>
+            <div class="event-capacity">${remaining}/100 seats</div>
           </div>
         </div>
       </div>
@@ -288,209 +267,152 @@ function renderEventCards(events) {
 }
 
 /* ── EVENT DETAIL MODAL ─────────────────────────────────── */
-let currentEventId    = null;
+let currentEventId = null;
 let selectedTicketType = 'general';
+let ticketQuantity = 1;
 
 function openEventDetail(id) {
   const e = STORE.events.find(ev => ev.id === id);
   if (!e) return;
-  currentEventId     = id;
+  currentEventId = id;
   selectedTicketType = 'general';
+  ticketQuantity = 1;
 
   const takenCount = getTakenSeats(id).size;
-  const remaining  = 100 - takenCount;
-  const alreadyBought = STORE.tickets.some(t => t.userId === currentUser.id && t.eventId === id);
+  const remaining = 100 - takenCount;
 
   document.getElementById('event-detail-content').innerHTML = `
     <div class="event-detail-hero" style="background:linear-gradient(135deg,${e.color}33,${e.color}66)">
-      <span style="font-size:80px;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.5))">${e.emoji}</span>
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 30%,rgba(14,14,28,0.95))"></div>
-      <div class="event-detail-info">
-        <div class="event-detail-title">${e.title}</div>
-        <div class="event-detail-tags">
-          <span class="tag tag-purple">${e.category}</span>
-          ${e.price === 0 ? '<span class="tag tag-teal">FREE ENTRY</span>' : ''}
-          ${remaining <= 0 ? '<span class="tag tag-err">SOLD OUT</span>' : '<span class="tag tag-blue">Seats Available</span>'}
-        </div>
-      </div>
+      <span style="font-size:80px">${e.emoji}</span>
+      <div class="event-detail-info"><div class="event-detail-title">${e.title}</div></div>
     </div>
     <div class="detail-grid">
       <div>
-        <div class="detail-section" style="margin-bottom:24px">
-          <h3>About This Event</h3>
-          <p style="font-size:14px;color:var(--t2);line-height:1.8">${e.desc}</p>
-        </div>
         <div class="detail-section">
-          <h3>Event Details</h3>
-          <div class="detail-meta-list">
-            <div class="detail-meta-row">
-              <span class="detail-meta-icon">📅</span>
-              <div class="detail-meta-text"><strong>${formatDate(e.date)}</strong><span>${e.time} onwards</span></div>
-            </div>
-            <div class="detail-meta-row">
-              <span class="detail-meta-icon">📍</span>
-              <div class="detail-meta-text"><strong>${e.venue}</strong></div>
-            </div>
-            <div class="detail-meta-row">
-              <span class="detail-meta-icon">💺</span>
-              <div class="detail-meta-text"><strong>${remaining} seats remaining</strong><span>out of 100 total</span></div>
-            </div>
-          </div>
+          <h3>About</h3>
+          <p>${e.desc}</p>
         </div>
       </div>
       <div>
         <div class="ticket-box">
-          <div class="ticket-box-title">Get Your Ticket</div>
-          ${alreadyBought ? `
-            <div style="background:rgba(0,206,201,0.08);border:1px solid rgba(0,206,201,0.2);border-radius:var(--r2);padding:14px;text-align:center;color:var(--ok);font-size:13px;font-weight:600">
-              ✓ You already have a ticket for this event
-            </div>` : `
+          <div class="ticket-box-title">Purchase Details</div>
+          
           <div class="ticket-type-row selected" id="tt-general" onclick="selectTicketType('general')">
-            <div>
-              <div class="ticket-type-name">General Admission</div>
-              <div class="ticket-type-avail">Rows C–J</div>
-            </div>
-            <div class="ticket-type-price">${e.price === 0 ? 'FREE' : '₱' + e.price.toLocaleString()}</div>
+            <div><div class="ticket-type-name">General Admission</div></div>
+            <div class="ticket-type-price">₱${e.price.toLocaleString()}</div>
           </div>
           ${e.vipPrice > 0 ? `
           <div class="ticket-type-row" id="tt-vip" onclick="selectTicketType('vip')">
-            <div>
-              <div class="ticket-type-name">⭐ VIP Pass</div>
-              <div class="ticket-type-avail">Rows A–B · Front rows + lounge</div>
-            </div>
+            <div><div class="ticket-type-name">⭐ VIP Pass</div></div>
             <div class="ticket-type-price">₱${e.vipPrice.toLocaleString()}</div>
           </div>` : ''}
-          <hr class="ticket-divider">
+
+          <div style="margin: 20px 0;">
+            <label style="font-size: 12px; color: var(--t3); display: block; margin-bottom: 8px;">QUANTITY (MAX 5)</label>
+            <div style="display: flex; align-items: center; gap: 15px;">
+              <button class="btn btn-sm btn-ghost" onclick="updateQty(-1)" style="padding: 5px 15px;">-</button>
+              <span id="qty-val" style="font-weight: 700; font-size: 18px;">1</span>
+              <button class="btn btn-sm btn-ghost" onclick="updateQty(1)" style="padding: 5px 15px;">+</button>
+            </div>
+          </div>
+
           <div class="ticket-total">
-            <span>Price</span>
-            <span id="detail-price">${e.price === 0 ? 'FREE' : '₱' + e.price.toLocaleString()}</span>
+            <span>Subtotal</span>
+            <span id="detail-subtotal">₱${e.price.toLocaleString()}</span>
           </div>
-          <div class="ticket-total">
-            <span>Service fee (5%)</span>
-            <span id="detail-fee">${e.price === 0 ? '₱0' : '₱' + Math.round(e.price * 0.05).toLocaleString()}</span>
-          </div>
-          <hr class="ticket-divider">
-          <div class="ticket-total" style="font-weight:700;color:var(--t1)">
-            <span style="font-size:16px">Total</span>
-            <div class="ticket-total-price" id="detail-total">${e.price === 0 ? 'FREE' : '₱' + Math.round(e.price * 1.05).toLocaleString()}</div>
-          </div>
-          <button class="btn btn-primary btn-full" style="margin-top:16px"
-            onclick="${remaining <= 0 ? "toast('Event is sold out','err')" : "openSeatModal()"}">
-            ${remaining <= 0 ? 'Sold Out' : 'Choose Seat →'}
+          <button class="btn btn-primary btn-full" style="margin-top:16px" 
+            onclick="${remaining <= 0 ? "toast('Sold out','err')" : "openSeatModal()"}">
+            ${remaining <= 0 ? 'Sold Out' : 'Choose Seats →'}
           </button>
-          <p style="font-size:11px;color:var(--t3);text-align:center;margin-top:8px">One ticket per attendee per event</p>
-          `}
         </div>
       </div>
     </div>
-    <div class="modal-footer" style="border-top:1px solid var(--border)">
-      <button class="btn btn-ghost" onclick="closeModal('event-detail-modal')">Close</button>
-    </div>`;
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('event-detail-modal')">Close</button></div>`;
 
   openModal('event-detail-modal');
 }
 
+function updateQty(delta) {
+  const newQty = ticketQuantity + delta;
+  if (newQty >= 1 && newQty <= 5) {
+    ticketQuantity = newQty;
+    document.getElementById('qty-val').textContent = ticketQuantity;
+    updateDetailPrices();
+  }
+}
+
 function selectTicketType(type) {
   selectedTicketType = type;
-  document.getElementById('tt-general')?.classList.remove('selected');
-  document.getElementById('tt-vip')?.classList.remove('selected');
+  document.querySelectorAll('.ticket-type-row').forEach(r => r.classList.remove('selected'));
   document.getElementById(`tt-${type}`)?.classList.add('selected');
+  updateDetailPrices();
+}
 
+function updateDetailPrices() {
   const e = STORE.events.find(ev => ev.id === currentEventId);
-  if (!e) return;
-  const base = type === 'vip' ? e.vipPrice : e.price;
-  const fee  = Math.round(base * 0.05);
-  document.getElementById('detail-price').textContent = base === 0 ? 'FREE' : '₱' + base.toLocaleString();
-  document.getElementById('detail-fee').textContent   = base === 0 ? '₱0'   : '₱' + fee.toLocaleString();
-  document.getElementById('detail-total').textContent  = base === 0 ? 'FREE' : '₱' + (base + fee).toLocaleString();
+  const base = selectedTicketType === 'vip' ? e.vipPrice : e.price;
+  document.getElementById('detail-subtotal').textContent = '₱' + (base * ticketQuantity).toLocaleString();
 }
 
 /* ── SEAT MAP MODAL ─────────────────────────────────────── */
-let selectedSeat = null; // e.g. "C5"
+let selectedSeats = [];
 
 function openSeatModal() {
   const e = STORE.events.find(ev => ev.id === currentEventId);
-  if (!e) return;
-  selectedSeat = null;
-
-  const takenSeats   = getTakenSeats(currentEventId);
-  const isVIPMode    = selectedTicketType === 'vip';
-
-  // Build seat grid HTML
-  let colHeaders = `<div class="seat-number-cols">
-    <div class="seat-col-label"></div>
-    ${[1,2,3,4,5,6,7,8,9,10].map(n => `<div class="seat-col-label">${n}</div>`).join('')}
-  </div>`;
+  selectedSeats = [];
+  const takenSeats = getTakenSeats(currentEventId);
+  const isVIPMode = selectedTicketType === 'vip';
 
   let gridHTML = ROWS.map(row => {
     const isVIPRow = isSeatVIP(row);
     let cells = `<div class="seat-row-label">${row}</div>`;
     for (let col = 1; col <= 10; col++) {
-      const seatId  = getSeatId(row, col);
+      const seatId = getSeatId(row, col);
       const isTaken = takenSeats.has(seatId);
-      const isVIPSeat = isVIPRow;
-      const wrongType = isVIPMode ? !isVIPSeat : isVIPSeat;
-
+      const wrongType = isVIPMode ? !isVIPRow : isVIPRow;
+      
       let cls = 'seat-btn';
-      if (isVIPSeat) cls += ' vip';
+      if (isVIPRow) cls += ' vip';
       if (isTaken || wrongType) cls += ' taken';
 
-      const label   = isTaken ? '✕' : (isVIPSeat ? '★' : seatId);
-      const title   = isTaken ? `${seatId} — Taken`
-                    : wrongType ? `${seatId} — ${isVIPSeat ? 'VIP only' : 'General only'}`
-                    : `Seat ${seatId}${isVIPSeat ? ' (VIP)' : ''}`;
-      const onclick = (!isTaken && !wrongType) ? `selectSeat('${seatId}')` : '';
-
-      cells += `<button class="${cls}" title="${title}" ${onclick ? `onclick="${onclick}"` : 'disabled'}>${isVIPSeat && !isTaken && !wrongType ? '★' : isTaken ? '✕' : col}</button>`;
+      const onclick = (!isTaken && !wrongType) ? `toggleSeat('${seatId}')` : '';
+      cells += `<button id="seat-${seatId}" class="${cls}" ${onclick ? `onclick="${onclick}"` : 'disabled'}>${isTaken ? '✕' : col}</button>`;
     }
     return cells;
   }).join('');
 
-  const body = `
-    <div style="text-align:center;margin-bottom:12px;font-size:13px;color:var(--t2)">
-      You are selecting a <strong style="color:var(--t1)">${isVIPMode ? '⭐ VIP (Rows A–B)' : 'General Admission (Rows C–J)'}</strong> seat.
-    </div>
+  document.getElementById('seat-modal-body').innerHTML = `
     <div class="seat-map-stage">🎭 STAGE / SCREEN</div>
-    <div class="seat-legend">
-      <div class="seat-legend-item"><div class="seat-legend-dot" style="background:var(--bg3);border:1px solid var(--border)"></div> Available</div>
-      <div class="seat-legend-item"><div class="seat-legend-dot" style="background:var(--p1)"></div> Your selection</div>
-      <div class="seat-legend-item"><div class="seat-legend-dot" style="background:rgba(225,112,85,0.3);border:1px solid rgba(225,112,85,0.4)"></div> Taken / Not available</div>
-      ${e.vipPrice > 0 ? `<div class="seat-legend-item"><div class="seat-legend-dot" style="background:rgba(253,203,110,0.3);border:1px solid rgba(253,203,110,0.4)"></div> VIP row</div>` : ''}
-    </div>
-    ${colHeaders}
-    <div class="seat-grid" id="seat-grid-container">
-      ${gridHTML}
-    </div>
-    <div class="selected-seat-info" id="selected-seat-info">
-      💺 Selected seat: <span id="selected-seat-label">—</span>
-    </div>`;
-
-  document.getElementById('seat-modal-body').innerHTML = body;
-  document.getElementById('confirm-seat-btn').disabled = true;
+    <div class="seat-grid">${gridHTML}</div>`;
+  
+  updateSeatStatus();
   openModal('seat-modal');
 }
 
-function selectSeat(seatId) {
-  document.querySelectorAll('.seat-btn.selected').forEach(b => b.classList.remove('selected'));
-  selectedSeat = seatId;
-
-  document.querySelectorAll('.seat-btn').forEach(btn => {
-    const onclick = btn.getAttribute('onclick');
-    if (onclick && onclick.includes(`'${seatId}'`)) btn.classList.add('selected');
-  });
-
-  const info = document.getElementById('selected-seat-info');
-  const label = document.getElementById('selected-seat-label');
-  const isVIP = isSeatVIP(seatId.charAt(0));
-  if (info && label) {
-    info.classList.add('visible');
-    label.textContent = `${seatId}${isVIP ? ' (VIP)' : ''} — Row ${seatId.charAt(0)}`;
+function toggleSeat(seatId) {
+  const idx = selectedSeats.indexOf(seatId);
+  if (idx > -1) {
+    selectedSeats.splice(idx, 1);
+    document.getElementById(`seat-${seatId}`).classList.remove('selected');
+  } else {
+    if (selectedSeats.length >= ticketQuantity) {
+      toast(`You can only select ${ticketQuantity} seats`, 'err');
+      return;
+    }
+    selectedSeats.push(seatId);
+    document.getElementById(`seat-${seatId}`).classList.add('selected');
   }
-  document.getElementById('confirm-seat-btn').disabled = false;
+  updateSeatStatus();
+}
+
+function updateSeatStatus() {
+  const status = document.getElementById('seat-selection-status');
+  const btn = document.getElementById('confirm-seat-btn');
+  status.textContent = `Selected ${selectedSeats.length} of ${ticketQuantity} seats`;
+  btn.disabled = (selectedSeats.length !== ticketQuantity);
 }
 
 function confirmSeatAndPay() {
-  if (!selectedSeat) { toast('Please choose a seat first', 'err'); return; }
   closeModal('seat-modal');
   openPaymentModal();
 }
@@ -500,36 +422,27 @@ let selectedPM = 'card';
 
 function openPaymentModal() {
   const e = STORE.events.find(ev => ev.id === currentEventId);
-  if (!e) return;
-  const base  = selectedTicketType === 'vip' ? e.vipPrice : e.price;
-  const fee   = calcFee(base, 1);
-  const total = calcTotal(base, 1);
+  const base = selectedTicketType === 'vip' ? e.vipPrice : e.price;
+  const subtotal = base * ticketQuantity;
+  const fee = 100;
+  const total = subtotal + fee;
 
   document.getElementById('payment-summary').innerHTML = `
-    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-      <span style="font-weight:700">${e.title}</span>
+    <div style="font-weight:700">${e.title}</div>
+    <div style="font-size:12px;color:var(--t3);margin:5px 0;">
+      ${ticketQuantity}x ${selectedTicketType.toUpperCase()} · Seats: ${selectedSeats.join(', ')}
     </div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px;color:var(--t3)">
-      <span>${selectedTicketType === 'vip' ? '⭐ VIP Pass' : 'General Admission'} · Seat ${selectedSeat}</span>
-      <span>${base === 0 ? 'FREE' : '₱' + base.toLocaleString()}</span>
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:10px">
+      <span>Subtotal</span><span>₱${subtotal.toLocaleString()}</span>
     </div>
-    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);padding-bottom:10px;border-bottom:1px solid var(--border)">
-      <span>Service fee (5%)</span>
-      <span>${base === 0 ? '₱0' : '₱' + fee.toLocaleString()}</span>
+    <div style="display:flex;justify-content:space-between;font-size:12px">
+      <span>Service fee (₱100)</span><span>₱${fee.toLocaleString()}</span>
     </div>
-    <div style="display:flex;justify-content:space-between;margin-top:10px;font-weight:700;font-size:16px">
-      <span>Total</span>
-      <span style="background:var(--grad2);-webkit-background-clip:text;-webkit-text-fill-color:transparent">
-        ${base === 0 ? 'FREE' : '₱' + total.toLocaleString()}
-      </span>
+    <div style="display:flex;justify-content:space-between;font-weight:700;margin-top:10px;font-size:16px;border-top:1px solid var(--border);padding-top:10px">
+      <span>Total</span><span>₱${total.toLocaleString()}</span>
     </div>`;
 
-  const payBtn = document.getElementById('pay-btn');
-  payBtn.textContent = base === 0 ? 'Get Free Ticket →' : `Pay ₱${total.toLocaleString()} →`;
-  payBtn.disabled = false;
-  
-  // Reset to default PM
-  selectPM(document.querySelector('.pm-btn'), 'card');
+  document.getElementById('pay-btn').textContent = `Pay ₱${total.toLocaleString()} →`;
   openModal('payment-modal');
 }
 
@@ -538,69 +451,42 @@ function selectPM(el, pm) {
   document.querySelectorAll('.pm-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   
-  // Hide all forms first
-  document.querySelectorAll('.pm-form').forEach(f => f.style.display = 'none');
-  
-  // Show the specific form
-  const targetForm = document.getElementById(`${pm}-form`);
-  if(targetForm) targetForm.style.display = 'block';
+  // Toggle form visibility
+  document.getElementById('card-form').style.display = pm === 'card' ? 'block' : 'none';
+  document.getElementById('paypal-form').style.display = pm === 'paypal' ? 'block' : 'none';
+  document.getElementById('gcash-form').style.display = pm === 'gcash' ? 'block' : 'none';
 }
 
 function processPayment() {
   const e = STORE.events.find(ev => ev.id === currentEventId);
-  if (!e || !selectedSeat) return;
-
-  // Form Validations
-  if (e.price > 0) {
-    if (selectedPM === 'card') {
-      const num = document.getElementById('card-num').value.replace(/\s/g, '');
-      if (num.length < 16) { toast('Invalid card number', 'err'); return; }
-    } else if (selectedPM === 'paypal') {
-      const email = document.getElementById('paypal-email').value;
-      if (!email.includes('@')) { toast('Enter a valid PayPal email', 'err'); return; }
-    } else if (selectedPM === 'gcash') {
-      const num = document.getElementById('gcash-num').value;
-      if (num.length < 11) { toast('Enter a valid 11-digit GCash number', 'err'); return; }
-    }
-  }
-
-  if (getTakenSeats(currentEventId).has(selectedSeat)) {
-    toast('That seat was just taken! Please choose another.', 'err');
-    closeModal('payment-modal');
-    openSeatModal();
-    return;
-  }
-
   const btn = document.getElementById('pay-btn');
+  
+  // Basic validation check based on method
+  if (selectedPM === 'card' && document.getElementById('card-num').value.length < 16) { toast('Invalid card info', 'err'); return; }
+  if (selectedPM === 'paypal' && !document.getElementById('paypal-email').value.includes('@')) { toast('Invalid PayPal email', 'err'); return; }
+  if (selectedPM === 'gcash' && document.getElementById('gcash-phone').value.length < 11) { toast('Invalid GCash number', 'err'); return; }
+
   btn.textContent = '⏳ Processing…';
   btn.disabled = true;
 
   setTimeout(() => {
-    const ticket = {
-      id:           generateTicketId(),
-      userId:       currentUser.id,
-      userName:     currentUser.name,
-      userEmail:    currentUser.email,
-      eventId:      currentEventId,
-      type:         selectedTicketType,
-      seat:         selectedSeat,
-      purchaseDate: new Date().toISOString(),
-      status:       'valid',
-      checkInTime:  null
-    };
-    STORE.tickets.push(ticket);
-
-    e.sold = getTakenSeats(currentEventId).size;
+    selectedSeats.forEach(seat => {
+      STORE.tickets.push({
+        id: generateTicketId(),
+        userId: currentUser.id,
+        userName: currentUser.name,
+        userEmail: currentUser.email,
+        eventId: currentEventId,
+        type: selectedTicketType,
+        seat: seat,
+        purchaseDate: new Date().toISOString(),
+        status: 'valid'
+      });
+    });
     saveStore();
-
     closeModal('payment-modal');
     closeModal('event-detail-modal');
-    btn.textContent = 'Pay Now →';
-    btn.disabled = false;
-
-    toast(`🎫 Ticket purchased! Seat ${selectedSeat} is yours!`, 'ok');
-    setTimeout(() => toast('📧 Confirmation email sent to ' + currentUser.email, 'info'), 1200);
-
+    toast(`🎫 ${ticketQuantity} tickets purchased successfully!`, 'ok');
     navigate('my-tickets');
   }, 2000);
 }
@@ -610,123 +496,45 @@ function renderMyTickets() {
   const userTickets = STORE.tickets.filter(t => t.userId === currentUser.id).reverse();
   const list = document.getElementById('my-tickets-list');
   if (!userTickets.length) {
-    list.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">🎫</div>
-      <div class="empty-title">No tickets yet</div>
-      <div class="empty-sub">Browse events and purchase tickets to see them here</div>
-      <button class="btn btn-primary" style="margin-top:16px" onclick="navigate('events')">Browse Events</button>
-    </div>`;
+    list.innerHTML = `<div class="empty-state">No tickets yet</div>`;
     return;
   }
-
-  list.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px">` +
-    userTickets.map(t => {
-      const ev = STORE.events.find(e => e.id === t.eventId) || {};
-      const statusClass = t.status === 'used' ? 'tag-warn' : t.status === 'valid' ? 'tag-teal' : 'tag-err';
-      return `
+  list.innerHTML = userTickets.map(t => {
+    const ev = STORE.events.find(e => e.id === t.eventId) || {};
+    return `
       <div class="ticket-card">
         <div class="ticket-left">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <span style="font-size:28px">${ev.emoji || '🎫'}</span>
-            <div>
-              <div class="ticket-event-name">${ev.title || 'Event'}</div>
-              <span class="tag ${statusClass}">${t.status === 'used' ? '✓ Used' : t.status === 'valid' ? '✓ Valid' : '✗ Invalid'}</span>
-            </div>
-          </div>
+          <div class="ticket-event-name">${ev.title}</div>
           <div class="ticket-meta">
-            <div class="ticket-meta-item">📅 ${ev.date ? formatDate(ev.date) : ''} · ${ev.time || ''}</div>
-            <div class="ticket-meta-item">📍 ${ev.venue || ''}</div>
-            <div class="ticket-meta-item">💺 Seat <strong>${t.seat}</strong></div>
-            <div class="ticket-meta-item">🎟 ${t.type === 'vip' ? '⭐ VIP Pass' : 'General Admission'}</div>
+            <div class="ticket-meta-item">💺 Seat <strong>${t.seat}</strong> · ${t.type.toUpperCase()}</div>
           </div>
-          <div class="ticket-id">${t.id}</div>
           <div class="ticket-actions">
             <button class="btn btn-sm btn-ghost" onclick="viewTicket('${t.id}')">View QR</button>
-            <button class="btn btn-sm btn-success" onclick="downloadTicketById('${t.id}')">⬇ Download</button>
           </div>
         </div>
-        <div class="ticket-right">
-          <div class="qr-container" id="qr-mini-${t.id}"></div>
-          <div class="ticket-status" style="color:${t.status === 'used' ? 'var(--warn)' : 'var(--ok)'}">
-            ${t.status.toUpperCase()}
-          </div>
-        </div>
+        <div class="ticket-right"><div class="qr-container" id="qr-mini-${t.id}"></div></div>
       </div>`;
-    }).join('') + '</div>';
+  }).join('');
 
   userTickets.forEach(t => {
-    setTimeout(() => {
-      const el = document.getElementById(`qr-mini-${t.id}`);
-      if (el && !el.querySelector('canvas')) {
-        generateQR(`qr-mini-${t.id}`,
-          { ticketId: t.id, userId: t.userId, eventId: t.eventId, seat: t.seat, type: t.type }, 88);
-      }
-    }, 100);
+    setTimeout(() => generateQR(`qr-mini-${t.id}`, { id: t.id }, 80), 100);
   });
 }
 
-/* ── VIEW TICKET MODAL ──────────────────────────────────── */
-let _viewTicketId = null;
-
 function viewTicket(id) {
-  const t  = STORE.tickets.find(tk => tk.id === id);
-  const e  = t ? STORE.events.find(ev => ev.id === t.eventId) : null;
-  if (!t || !e) return;
-  _viewTicketId = id;
-
+  const t = STORE.tickets.find(tk => tk.id === id);
+  const e = STORE.events.find(ev => ev.id === t.eventId);
   document.getElementById('ticket-view-body').innerHTML = `
     <div class="printable-ticket" id="printable-${t.id}">
-      <div class="pt-header">
-        <div class="pt-logo">🎫 EventPass</div>
-        <span class="tag ${t.status === 'valid' ? 'tag-teal' : 'tag-warn'}">${t.status === 'used' ? '✓ Used' : '✓ Valid'}</span>
-      </div>
-      <div style="margin-bottom:4px;font-size:12px;color:var(--t3);text-transform:uppercase;letter-spacing:1px">${e.category} Event</div>
       <div class="pt-event-name">${e.title}</div>
       <div class="pt-meta">
-        <div class="pt-meta-item"><strong>📅 Date</strong>${formatDate(e.date)}</div>
-        <div class="pt-meta-item"><strong>⏰ Time</strong>${e.time}</div>
-        <div class="pt-meta-item"><strong>📍 Venue</strong>${e.venue.split(',')[0]}</div>
-        <div class="pt-meta-item"><strong>👤 Name</strong>${t.userName}</div>
-        <div class="pt-meta-item"><strong>🎟 Type</strong>${t.type === 'vip' ? '⭐ VIP Pass' : 'General'}</div>
-        <div class="pt-meta-item"><strong>💺 Seat</strong><span style="font-weight:900;font-size:18px;color:var(--p2)">${t.seat}</span></div>
+        <div class="pt-meta-item"><strong>Seat</strong>${t.seat}</div>
+        <div class="pt-meta-item"><strong>Attendee</strong>${t.userName}</div>
       </div>
-      <div class="pt-divider"></div>
-      <div class="pt-bottom">
-        <div>
-          <div style="font-size:12px;color:var(--t3);margin-bottom:4px">TICKET ID</div>
-          <div class="pt-id">${t.id}</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:6px">Purchased ${new Date(t.purchaseDate).toLocaleDateString()}</div>
-        </div>
-        <div style="text-align:center">
-          <div class="pt-qr" id="qr-full-${t.id}"></div>
-          <div style="font-size:11px;color:var(--t3);margin-top:6px">Scan to check in</div>
-        </div>
-      </div>
+      <div id="qr-full-${t.id}" style="display:flex;justify-content:center;margin-top:20px"></div>
     </div>`;
-
   openModal('ticket-view-modal');
-
-  setTimeout(() => {
-    generateQR(`qr-full-${t.id}`,
-      { ticketId: t.id, userId: t.userId, eventId: t.eventId, seat: t.seat, type: t.type }, 80);
-  }, 200);
-}
-
-function downloadTicket() {
-  if (_viewTicketId) downloadTicketById(_viewTicketId);
-}
-
-function downloadTicketById(id) {
-  const el = document.getElementById(`printable-${id}`);
-  if (!el) { viewTicket(id); setTimeout(() => downloadTicketById(id), 600); return; }
-  toast('Generating ticket image…', 'info');
-  html2canvas(el, { backgroundColor: '#1a1a36', scale: 2 }).then(canvas => {
-    const link = document.createElement('a');
-    link.download = `EventPass-${id}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    toast('Ticket downloaded!', 'ok');
-  }).catch(() => toast('Download failed — try again', 'err'));
+  setTimeout(() => generateQR(`qr-full-${t.id}`, { id: t.id }, 120), 200);
 }
 </script>
 </body>
