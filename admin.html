@@ -799,7 +799,7 @@ function showScanResult(status, ticket, event) {
   const cfgs = {
     valid:   { cls: 'valid',   icon: '✅', title: 'Check-In Successful!',
                 detail: ticket ? `${ticket.userName} · ${event?.title || 'Unknown Event'} · Seat ${ticket.seat} · ${ticket.type === 'vip' ? '⭐ VIP' : 'General'}` : '' },
-    used:    { cls: 'used',    icon: '⚠️', title: 'Already Checked In',
+    used:    { cls: 'used',    icon: '✅', title: 'Already Checked In',
                 detail: ticket ? `${ticket.userName} · Seat ${ticket.seat} · checked in at ${ticket.checkInTime ? new Date(ticket.checkInTime).toLocaleTimeString() : 'earlier'}` : '' },
     invalid: { cls: 'invalid', icon: '❌', title: 'Invalid Ticket',
                 detail: 'This QR code is not recognized in our system.' }
