@@ -192,10 +192,19 @@ let currentUser = null;
 (function init() {
   currentUser = requireAuth('user');
   if (!currentUser) return;
+
   document.getElementById('sb-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
   document.getElementById('sb-name').textContent   = currentUser.name;
+
   initModalListeners();
-  navigate('events');
+
+  // ✅ WAIT FOR FULL PAGE LAYOUT BEFORE FIRST RENDER
+  window.onload = () => {
+    requestAnimationFrame(() => {
+      navigate('events');
+      renderEvents();
+    });
+  };
 })();
 
 function doLogout() {
@@ -204,8 +213,17 @@ function doLogout() {
 }
 
 window.onNavigate = function(page) {
-  if (page === 'events')     renderEvents();
-  if (page === 'my-tickets') renderMyTickets();
+  if (page === 'events') {
+    requestAnimationFrame(() => {
+      renderEvents();
+    });
+  }
+
+  if (page === 'my-tickets') {
+    requestAnimationFrame(() => {
+      renderMyTickets();
+    });
+  }
 };
 
 /* ── FILTER & SEARCH ────────────────────────────────────── */
@@ -227,8 +245,11 @@ function filterEvents() {
   renderEventCards(filtered);
 }
 
-function renderEvents() { filterEvents(); }
-
+function renderEvents() {
+  setTimeout(() => {
+    filterEvents();
+  }, 0);
+}
 function renderEventCards(events) {
   const grid = document.getElementById('events-grid');
   if (!events.length) {
