@@ -10,10 +10,9 @@
 </head>
 <body>
 
-
 <div id="shell">
 
-  
+  <!-- SIDEBAR -->
   <nav id="sidebar">
     <div class="sb-logo">
       <div class="sb-logo-icon">🎫</div>    
@@ -89,36 +88,81 @@
         <div style="font-size:24px;margin-bottom:8px">📷</div>
         <h2 style="font-size:22px;font-weight:800;margin-bottom:6px">QR Check-In Scanner</h2>
         <p style="font-size:14px;color:var(--t2);margin-bottom:20px">
-          Point your camera at an attendee's ticket QR code to validate and check them in
+          Use your camera to scan a ticket QR code, or upload a QR image file
         </p>
 
-        <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px">
-          <button class="btn btn-primary" onclick="startScanner()" id="scan-start-btn">▶ Start Camera</button>
-          <button class="btn btn-ghost" onclick="stopScanner()" id="scan-stop-btn" style="display:none">■ Stop Camera</button>
+        <!-- ── TABS ── -->
+        <div class="scanner-tabs">
+          <button class="scanner-tab active" id="tab-camera" onclick="switchScannerTab('camera')">📷 Camera</button>
+          <button class="scanner-tab" id="tab-upload" onclick="switchScannerTab('upload')">🖼 Upload Image</button>
+          <button class="scanner-tab" id="tab-manual" onclick="switchScannerTab('manual')">⌨️ Manual Entry</button>
         </div>
 
-        <div class="video-wrapper" id="video-wrapper" style="display:none">
-          <video id="scanner-video" autoplay playsinline muted></video>
-          <canvas id="scanner-canvas" style="display:none"></canvas>
-          <div class="scanner-overlay">
-            <div class="scanner-frame">
-              <div class="scanner-frame-tl"></div>
-              <div class="scanner-frame-br"></div>
-              <div class="scan-line"></div>
+        <!-- ── TAB: CAMERA ── -->
+        <div class="scanner-tab-panel" id="panel-camera">
+          <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px">
+            <button class="btn btn-primary" onclick="startScanner()" id="scan-start-btn">▶ Start Camera</button>
+            <button class="btn btn-ghost" onclick="stopScanner()" id="scan-stop-btn" style="display:none">■ Stop Camera</button>
+          </div>
+
+          <div class="video-wrapper" id="video-wrapper" style="display:none">
+            <video id="scanner-video" autoplay playsinline muted></video>
+            <canvas id="scanner-canvas" style="display:none"></canvas>
+            <div class="scanner-overlay">
+              <div class="scanner-frame">
+                <div class="scanner-frame-tl"></div>
+                <div class="scanner-frame-br"></div>
+                <div class="scan-line"></div>
+              </div>
             </div>
           </div>
+
+          <p style="font-size:12px;color:var(--t3);margin-top:8px">
+            💡 Make sure camera permissions are allowed in your browser settings
+          </p>
         </div>
 
-        <div id="scan-result-area"></div>
+        <!-- ── TAB: UPLOAD IMAGE ── -->
+        <div class="scanner-tab-panel" id="panel-upload" style="display:none">
+          <div class="upload-drop-zone" id="upload-drop-zone" onclick="document.getElementById('qr-file-input').click()" ondrop="handleFileDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+            <div class="upload-icon">🖼</div>
+            <div class="upload-title">Drop a QR code image here</div>
+            <div class="upload-sub">or click to browse files</div>
+            <div class="upload-formats">Supports: PNG, JPG, JPEG, GIF, WebP, BMP</div>
+          </div>
+          <input type="file" id="qr-file-input" accept="image/*" style="display:none" onchange="handleFileUpload(event)">
 
-        <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
-          <p style="font-size:13px;color:var(--t3);margin-bottom:10px">Or enter ticket ID manually:</p>
+          <!-- Preview area -->
+          <div id="upload-preview-area" style="display:none;margin-top:16px">
+            <div style="position:relative;display:inline-block;border-radius:12px;overflow:hidden;border:2px solid var(--border2)">
+              <img id="upload-preview-img" style="max-width:280px;max-height:280px;display:block" alt="QR preview">
+              <canvas id="upload-canvas" style="display:none"></canvas>
+            </div>
+            <div style="margin-top:10px">
+              <button class="btn btn-primary btn-sm" onclick="document.getElementById('qr-file-input').click()">📁 Choose Different File</button>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:var(--t3);margin-top:12px">
+            💡 Upload a screenshot or saved image of the ticket QR code to validate it
+          </p>
+        </div>
+
+        <!-- ── TAB: MANUAL ── -->
+        <div class="scanner-tab-panel" id="panel-manual" style="display:none">
+          <p style="font-size:13px;color:var(--t3);margin-bottom:10px">Enter the ticket ID printed on the ticket:</p>
           <div style="display:flex;gap:10px">
             <input class="form-input" id="manual-ticket-id" placeholder="TICKET-XXXXX" style="flex:1"
                    onkeydown="if(event.key==='Enter') manualCheckIn()">
             <button class="btn btn-primary" onclick="manualCheckIn()">Check In</button>
           </div>
+          <p style="font-size:12px;color:var(--t3);margin-top:10px">
+            💡 The ticket ID is the monospace code shown on the bottom of each ticket (e.g. TICKET-AB3XY9)
+          </p>
         </div>
+
+        <!-- ── SHARED RESULT AREA ── -->
+        <div id="scan-result-area"></div>
       </div>
     </div>
 
@@ -299,6 +343,7 @@ window.onNavigate = function(page) {
   if (page === 'admin-events') renderAdminEvents();
   if (page === 'analytics')    renderAnalytics();
   if (page === 'attendees')    renderAttendees();
+  if (page === 'scanner')      resetScannerUI();
 };
 
 /* ── MANAGE EVENTS ──────────────────────────────────────── */
@@ -368,7 +413,7 @@ function viewSeatMap(eventId) {
       let cls = 'seat-btn';
       if (isVIPRow) cls += ' vip';
       if (isTaken)  cls += ' taken';
-      if (isChecked) cls = cls.replace('taken', '') + ' selected'; // reuse "selected" for checked-in style
+      if (isChecked) cls = cls.replace('taken', '') + ' selected';
 
       const title = isTaken
         ? `${seatId} — ${ticketInfo?.userName || 'Taken'} ${isChecked ? '(Checked In)' : '(Not checked in)'}`
@@ -478,43 +523,120 @@ function deleteEvent(id) {
   toast('Event deleted', 'warn');
 }
 
-/* ── QR SCANNER ─────────────────────────────────────────── */
-let scannerStream   = null;
-let scannerInterval = null;
-let lastScanTime    = 0;
+/* ═══════════════════════════════════════════════════
+   QR SCANNER — COMPLETELY REWRITTEN
+   ═══════════════════════════════════════════════════ */
 
+let scannerStream    = null;
+let scanAnimFrame    = null;   // requestAnimationFrame handle
+let lastScanTime     = 0;
+let activeScannerTab = 'camera';
+
+/* ── Tab switching ────────────────────────────────── */
+function resetScannerUI() {
+  document.getElementById('scan-result-area').innerHTML = '';
+  switchScannerTab('camera');
+}
+
+function switchScannerTab(tab) {
+  activeScannerTab = tab;
+
+  // Stop camera if leaving camera tab
+  if (tab !== 'camera') stopScanner();
+
+  // Update tab buttons
+  document.querySelectorAll('.scanner-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+
+  // Show/hide panels
+  document.querySelectorAll('.scanner-tab-panel').forEach(p => p.style.display = 'none');
+  document.getElementById(`panel-${tab}`).style.display = 'block';
+
+  // Clear result area when switching tabs
+  document.getElementById('scan-result-area').innerHTML = '';
+}
+
+/* ── CAMERA SCANNER ───────────────────────────────── */
 async function startScanner() {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    // Request camera — try environment (rear) first, fall back to any
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+    } catch {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    }
+
     scannerStream = stream;
     const video = document.getElementById('scanner-video');
     video.srcObject = stream;
+
+    // Wait for video to be ready before starting decode loop
+    video.onloadedmetadata = () => {
+      video.play().catch(() => {});
+    };
+
     document.getElementById('video-wrapper').style.display  = 'block';
     document.getElementById('scan-start-btn').style.display = 'none';
     document.getElementById('scan-stop-btn').style.display  = 'flex';
     document.getElementById('scan-result-area').innerHTML   = '';
 
-    const canvas = document.getElementById('scanner-canvas');
-    const ctx    = canvas.getContext('2d');
+    // Start the decode loop using rAF for better timing
+    startDecodeLoop(video);
 
-    scannerInterval = setInterval(() => {
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        canvas.width  = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
-        if (code) processQR(code.data);
-      }
-    }, 300);
-  } catch(e) {
-    toast('Camera access denied. Use manual entry below.', 'err');
+  } catch(err) {
+    console.error('Camera error:', err);
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      toast('Camera permission denied. Allow camera access in browser settings, or use Upload/Manual tab.', 'err');
+    } else if (err.name === 'NotFoundError') {
+      toast('No camera found on this device. Use the Upload or Manual tab instead.', 'err');
+    } else {
+      toast('Could not start camera: ' + err.message, 'err');
+    }
   }
 }
 
+function startDecodeLoop(video) {
+  const canvas = document.getElementById('scanner-canvas');
+  const ctx    = canvas.getContext('2d', { willReadFrequently: true });
+
+  function tick() {
+    // Only decode when video has actual dimensions and is playing
+    if (video.readyState >= video.HAVE_ENOUGH_DATA && video.videoWidth > 0 && video.videoHeight > 0) {
+      canvas.width  = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert'
+      });
+
+      if (code && code.data) {
+        const now = Date.now();
+        if (now - lastScanTime > 3000) {   // debounce 3s
+          lastScanTime = now;
+          processQR(code.data);
+        }
+      }
+    }
+
+    // Keep looping if stream is still active
+    if (scannerStream && scannerStream.active) {
+      scanAnimFrame = requestAnimationFrame(tick);
+    }
+  }
+
+  // Kick off the loop
+  scanAnimFrame = requestAnimationFrame(tick);
+}
+
 function stopScanner() {
+  if (scanAnimFrame) { cancelAnimationFrame(scanAnimFrame); scanAnimFrame = null; }
   if (scannerStream) { scannerStream.getTracks().forEach(t => t.stop()); scannerStream = null; }
-  if (scannerInterval) { clearInterval(scannerInterval); scannerInterval = null; }
+
   const vw = document.getElementById('video-wrapper');
   const sb = document.getElementById('scan-start-btn');
   const ss = document.getElementById('scan-stop-btn');
@@ -523,13 +645,134 @@ function stopScanner() {
   if (ss) ss.style.display = 'none';
 }
 
-function processQR(data) {
-  const now = Date.now();
-  if (now - lastScanTime < 3000) return;
-  lastScanTime = now;
+/* ── QR IMAGE UPLOAD ──────────────────────────────── */
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('upload-drop-zone').classList.add('drag-over');
+}
 
+function handleDragLeave(e) {
+  document.getElementById('upload-drop-zone').classList.remove('drag-over');
+}
+
+function handleFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer?.files?.[0];
+  if (file && file.type.startsWith('image/')) {
+    processUploadedImage(file);
+  } else {
+    toast('Please drop an image file (PNG, JPG, etc.)', 'err');
+  }
+}
+
+function handleFileUpload(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  processUploadedImage(file);
+  // Reset input so same file can be re-selected
+  e.target.value = '';
+}
+
+function processUploadedImage(file) {
+  const reader = new FileReader();
+
+  reader.onload = function(ev) {
+    const img = new Image();
+    img.onload = function() {
+      // Show preview
+      const previewImg = document.getElementById('upload-preview-img');
+      previewImg.src = ev.target.result;
+      document.getElementById('upload-preview-area').style.display = 'block';
+      document.getElementById('upload-drop-zone').style.display = 'none';
+
+      // Decode QR from image
+      decodeQRFromImage(img);
+    };
+    img.onerror = function() {
+      toast('Could not load image file', 'err');
+    };
+    img.src = ev.target.result;
+  };
+
+  reader.onerror = function() {
+    toast('Could not read file', 'err');
+  };
+
+  reader.readAsDataURL(file);
+}
+
+function decodeQRFromImage(img) {
+  // Show scanning indicator
+  document.getElementById('scan-result-area').innerHTML = `
+    <div style="padding:16px;text-align:center;color:var(--t2);font-size:14px">
+      <div style="font-size:24px;margin-bottom:8px;animation:spin 1s linear infinite;display:inline-block">⏳</div>
+      <div>Scanning QR code…</div>
+    </div>`;
+
+  const canvas = document.getElementById('upload-canvas');
+  const ctx    = canvas.getContext('2d', { willReadFrequently: true });
+
+  // Try multiple scales for better detection
+  const scales = [1, 0.5, 2, 0.75, 1.5];
+  let found = false;
+
+  for (const scale of scales) {
+    canvas.width  = Math.round(img.naturalWidth  * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+
+    // White background (in case of transparency)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    // Try both inversion modes
+    const attempts = ['dontInvert', 'onlyInvert', 'attemptBoth'];
+    for (const inv of attempts) {
+      const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: inv });
+      if (code && code.data) {
+        found = true;
+        processQR(code.data);
+        break;
+      }
+    }
+    if (found) break;
+  }
+
+  if (!found) {
+    document.getElementById('scan-result-area').innerHTML = `
+      <div class="scan-result invalid">
+        <span class="scan-result-icon">❌</span>
+        <div class="scan-result-name">No QR Code Detected</div>
+        <div class="scan-result-detail">Could not find a valid QR code in this image. Make sure the image is clear, well-lit, and contains a QR code.</div>
+      </div>`;
+    toast('No QR code found in image', 'err');
+
+    // Show drop zone again for retry
+    setTimeout(() => {
+      document.getElementById('upload-drop-zone').style.display = 'block';
+      document.getElementById('upload-preview-area').style.display = 'none';
+    }, 2500);
+  }
+}
+
+/* ── SHARED QR PROCESSING ─────────────────────────── */
+function processQR(data) {
   let parsed;
-  try { parsed = JSON.parse(data); } catch(e) { showScanResult('invalid', null); return; }
+  try {
+    parsed = JSON.parse(data);
+  } catch(e) {
+    // Maybe it's just a plain ticket ID string
+    const ticket = STORE.tickets.find(t => t.id === data.trim().toUpperCase());
+    if (ticket) {
+      parsed = { ticketId: ticket.id };
+    } else {
+      showScanResult('invalid', null);
+      return;
+    }
+  }
 
   const ticket = STORE.tickets.find(t => t.id === parsed.ticketId);
   if (!ticket) { showScanResult('invalid', null); return; }
@@ -552,7 +795,7 @@ function showScanResult(status, ticket, event) {
   const area = document.getElementById('scan-result-area');
   const cfgs = {
     valid:   { cls: 'valid',   icon: '✅', title: 'Check-In Successful!',
-                detail: ticket ? `${ticket.userName} · ${event?.title} · Seat ${ticket.seat} · ${ticket.type === 'vip' ? '⭐ VIP' : 'General'}` : '' },
+                detail: ticket ? `${ticket.userName} · ${event?.title || 'Unknown Event'} · Seat ${ticket.seat} · ${ticket.type === 'vip' ? '⭐ VIP' : 'General'}` : '' },
     used:    { cls: 'used',    icon: '⚠️', title: 'Already Checked In',
                 detail: ticket ? `${ticket.userName} · Seat ${ticket.seat} · checked in at ${ticket.checkInTime ? new Date(ticket.checkInTime).toLocaleTimeString() : 'earlier'}` : '' },
     invalid: { cls: 'invalid', icon: '❌', title: 'Invalid Ticket',
@@ -566,6 +809,14 @@ function showScanResult(status, ticket, event) {
       <div class="scan-result-detail">${c.detail}</div>
     </div>`;
   toast(c.title, status === 'valid' ? 'ok' : status === 'used' ? 'warn' : 'err');
+
+  // After upload scan, show the drop zone again after a delay for next scan
+  if (activeScannerTab === 'upload') {
+    setTimeout(() => {
+      document.getElementById('upload-drop-zone').style.display = 'block';
+      document.getElementById('upload-preview-area').style.display = 'none';
+    }, 3000);
+  }
 }
 
 function manualCheckIn() {
@@ -622,7 +873,6 @@ function buildCharts() {
   Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
   charts = {};
 
-  // Sales over time (last 30 days)
   const days = [], salesData = [];
   for (let i = 29; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
@@ -654,7 +904,6 @@ function buildCharts() {
     }
   });
 
-  // Category donut
   const cats = {};
   STORE.events.forEach(e => { cats[e.category] = (cats[e.category] || 0) + getTakenSeats(e.id).size; });
   charts.cat = new Chart(document.getElementById('category-chart'), {
@@ -673,7 +922,6 @@ function buildCharts() {
     }
   });
 
-  // Check-in bar
   const evNames  = STORE.events.slice(0, 6).map(e => e.title.substring(0, 16) + '…');
   const evSold   = STORE.events.slice(0, 6).map(e => getTakenSeats(e.id).size);
   const evChkIn  = STORE.events.slice(0, 6).map(e =>

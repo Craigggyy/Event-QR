@@ -514,11 +514,28 @@ img { display: block; max-width: 100%; }
 /* ── QR SCANNER ──────────────────────────────────────────── */
 .scanner-container {
   background: var(--card); border: 1px solid var(--border2); border-radius: var(--r);
-  padding: 32px; text-align: center; max-width: 600px; margin: 0 auto;
+  padding: 32px; text-align: center; max-width: 620px; margin: 0 auto;
 }
+
+/* Scanner tabs */
+.scanner-tabs {
+  display: flex; gap: 6px; background: var(--bg2);
+  border-radius: var(--r2); padding: 5px; margin-bottom: 24px;
+}
+.scanner-tab {
+  flex: 1; padding: 9px 12px; border-radius: 8px; background: transparent;
+  border: none; color: var(--t2); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .2s; white-space: nowrap;
+}
+.scanner-tab:hover { color: var(--t1); background: rgba(108,92,231,0.08); }
+.scanner-tab.active { background: var(--grad); color: #fff; box-shadow: 0 4px 12px rgba(108,92,231,0.3); }
+
+.scanner-tab-panel { text-align: left; }
+
+/* Camera panel */
 .video-wrapper {
   position: relative; border-radius: var(--r); overflow: hidden;
-  background: #000; margin: 24px 0; aspect-ratio: 4/3;
+  background: #000; margin: 16px 0; aspect-ratio: 4/3;
   border: 2px solid var(--border2);
 }
 #scanner-video { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -542,9 +559,28 @@ img { display: block; max-width: 100%; }
   top: 50%; animation: scanAnim 2s linear infinite;
 }
 @keyframes scanAnim { 0% { top: 10%; } 100% { top: 90%; } }
+
+/* Upload panel */
+.upload-drop-zone {
+  border: 2px dashed var(--border2); border-radius: var(--r);
+  padding: 40px 24px; text-align: center; cursor: pointer;
+  transition: all .2s; background: var(--bg2);
+}
+.upload-drop-zone:hover,
+.upload-drop-zone.drag-over {
+  border-color: var(--p1); background: rgba(108,92,231,0.08);
+  box-shadow: 0 0 0 4px rgba(108,92,231,0.1);
+}
+.upload-icon { font-size: 44px; margin-bottom: 12px; }
+.upload-title { font-size: 16px; font-weight: 700; color: var(--t1); margin-bottom: 4px; }
+.upload-sub   { font-size: 13px; color: var(--t2); margin-bottom: 8px; }
+.upload-formats { font-size: 11px; color: var(--t3); }
+
+/* Scan results */
 .scan-result {
-  padding: 20px; border-radius: var(--r2); margin-top: 16px;
+  padding: 20px; border-radius: var(--r2); margin-top: 20px;
   border: 2px solid; text-align: center; transition: all .3s;
+  animation: fadeUp .3s ease;
 }
 .scan-result.valid   { background: rgba(0,206,201,0.08);   border-color: rgba(0,206,201,0.3);   color: var(--ok); }
 .scan-result.used    { background: rgba(253,203,110,0.08); border-color: rgba(253,203,110,0.25); color: var(--warn); }
@@ -643,6 +679,9 @@ canvas { max-width: 100%; }
 }
 .color-swatch.selected { border-color: #fff; transform: scale(1.15); }
 
+/* Spinner */
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
 /* ── RESPONSIVE ──────────────────────────────────────────── */
 @media (max-width: 1100px) {
   .events-grid { grid-template-columns: repeat(2,1fr); }
@@ -655,4 +694,6 @@ canvas { max-width: 100%; }
   .ticket-card  { grid-template-columns: 1fr; }
   .seat-grid    { gap: 2px; }
   .seat-btn     { font-size: 8px; }
+  .scanner-tabs { flex-wrap: wrap; }
+  .scanner-tab  { font-size: 11px; padding: 7px 8px; }
 }
