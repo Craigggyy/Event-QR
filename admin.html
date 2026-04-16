@@ -524,11 +524,11 @@ function deleteEvent(id) {
 }
 
 /* ═══════════════════════════════════════════════════
-   QR SCANNER — COMPLETELY REWRITTEN
+   QR SCANNER
    ═══════════════════════════════════════════════════ */
 
 let scannerStream    = null;
-let scanAnimFrame    = null;   // requestAnimationFrame handle
+let scanAnimFrame    = null;
 let lastScanTime     = 0;
 let activeScannerTab = 'camera';
 
@@ -540,26 +540,17 @@ function resetScannerUI() {
 
 function switchScannerTab(tab) {
   activeScannerTab = tab;
-
-  // Stop camera if leaving camera tab
   if (tab !== 'camera') stopScanner();
-
-  // Update tab buttons
   document.querySelectorAll('.scanner-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(`tab-${tab}`).classList.add('active');
-
-  // Show/hide panels
   document.querySelectorAll('.scanner-tab-panel').forEach(p => p.style.display = 'none');
   document.getElementById(`panel-${tab}`).style.display = 'block';
-
-  // Clear result area when switching tabs
   document.getElementById('scan-result-area').innerHTML = '';
 }
 
 /* ── CAMERA SCANNER ───────────────────────────────── */
 async function startScanner() {
   try {
-    // Request camera — try environment (rear) first, fall back to any
     let stream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
@@ -573,7 +564,6 @@ async function startScanner() {
     const video = document.getElementById('scanner-video');
     video.srcObject = stream;
 
-    // Wait for video to be ready before starting decode loop
     video.onloadedmetadata = () => {
       video.play().catch(() => {});
     };
@@ -583,7 +573,6 @@ async function startScanner() {
     document.getElementById('scan-stop-btn').style.display  = 'flex';
     document.getElementById('scan-result-area').innerHTML   = '';
 
-    // Start the decode loop using rAF for better timing
     startDecodeLoop(video);
 
   } catch(err) {
@@ -603,7 +592,6 @@ function startDecodeLoop(video) {
   const ctx    = canvas.getContext('2d', { willReadFrequently: true });
 
   function tick() {
-    // Only decode when video has actual dimensions and is playing
     if (video.readyState >= video.HAVE_ENOUGH_DATA && video.videoWidth > 0 && video.videoHeight > 0) {
       canvas.width  = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -611,25 +599,23 @@ function startDecodeLoop(video) {
 
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'dontInvert'
+        inversionAttempts: 'attemptBoth'   // FIX: try both normal and inverted
       });
 
       if (code && code.data) {
         const now = Date.now();
-        if (now - lastScanTime > 3000) {   // debounce 3s
+        if (now - lastScanTime > 3000) {
           lastScanTime = now;
           processQR(code.data);
         }
       }
     }
 
-    // Keep looping if stream is still active
     if (scannerStream && scannerStream.active) {
       scanAnimFrame = requestAnimationFrame(tick);
     }
   }
 
-  // Kick off the loop
   scanAnimFrame = requestAnimationFrame(tick);
 }
 
@@ -670,11 +656,17 @@ function handleFileUpload(e) {
   const file = e.target.files?.[0];
   if (!file) return;
   processUploadedImage(file);
-  // Reset input so same file can be re-selected
   e.target.value = '';
 }
 
 function processUploadedImage(file) {
+  // FIX: Show spinner FIRST, then decode asynchronously so UI doesn't freeze
+  document.getElementById('scan-result-area').innerHTML = `
+    <div style="padding:16px;text-align:center;color:var(--t2);font-size:14px">
+      <div style="font-size:24px;margin-bottom:8px;animation:spin 1s linear infinite;display:inline-block">⏳</div>
+      <div>Scanning QR code…</div>
+    </div>`;
+
   const reader = new FileReader();
 
   reader.onload = function(ev) {
@@ -686,59 +678,52 @@ function processUploadedImage(file) {
       document.getElementById('upload-preview-area').style.display = 'block';
       document.getElementById('upload-drop-zone').style.display = 'none';
 
-      // Decode QR from image
-      decodeQRFromImage(img);
+      // FIX: Use setTimeout to let the browser render the spinner before heavy decoding
+      setTimeout(() => decodeQRFromImage(img), 50);
     };
     img.onerror = function() {
       toast('Could not load image file', 'err');
+      resetUploadUI();
     };
     img.src = ev.target.result;
   };
 
   reader.onerror = function() {
     toast('Could not read file', 'err');
+    resetUploadUI();
   };
 
   reader.readAsDataURL(file);
 }
 
 function decodeQRFromImage(img) {
-  // Show scanning indicator
-  document.getElementById('scan-result-area').innerHTML = `
-    <div style="padding:16px;text-align:center;color:var(--t2);font-size:14px">
-      <div style="font-size:24px;margin-bottom:8px;animation:spin 1s linear infinite;display:inline-block">⏳</div>
-      <div>Scanning QR code…</div>
-    </div>`;
-
   const canvas = document.getElementById('upload-canvas');
   const ctx    = canvas.getContext('2d', { willReadFrequently: true });
 
-  // Try multiple scales for better detection
-  const scales = [1, 0.5, 2, 0.75, 1.5];
+  // Try multiple scales and inversion modes for best detection
+  const scales = [1, 1.5, 0.75, 2, 0.5];
+  const inversionModes = ['attemptBoth', 'dontInvert', 'onlyInvert'];
   let found = false;
 
+  outer:
   for (const scale of scales) {
     canvas.width  = Math.round(img.naturalWidth  * scale);
     canvas.height = Math.round(img.naturalHeight * scale);
 
-    // White background (in case of transparency)
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-    // Try both inversion modes
-    const attempts = ['dontInvert', 'onlyInvert', 'attemptBoth'];
-    for (const inv of attempts) {
+    for (const inv of inversionModes) {
       const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: inv });
       if (code && code.data) {
         found = true;
         processQR(code.data);
-        break;
+        break outer;
       }
     }
-    if (found) break;
   }
 
   if (!found) {
@@ -750,32 +735,50 @@ function decodeQRFromImage(img) {
       </div>`;
     toast('No QR code found in image', 'err');
 
-    // Show drop zone again for retry
-    setTimeout(() => {
-      document.getElementById('upload-drop-zone').style.display = 'block';
-      document.getElementById('upload-preview-area').style.display = 'none';
-    }, 2500);
+    setTimeout(() => resetUploadUI(), 2500);
   }
 }
 
+function resetUploadUI() {
+  document.getElementById('upload-drop-zone').style.display = 'block';
+  document.getElementById('upload-preview-area').style.display = 'none';
+}
+
 /* ── SHARED QR PROCESSING ─────────────────────────── */
+/*
+ * FIX: QR codes from your ticket generator encode {"id":"TICKET-XXXXX"} 
+ * but the old code only checked for parsed.ticketId — which never matched.
+ * Now we check both parsed.id AND parsed.ticketId so both formats work.
+ */
 function processQR(data) {
-  let parsed;
+  console.log('[QR] Raw data received:', data);
+
+  let ticketId = null;
+
+  // Try to parse as JSON first
   try {
-    parsed = JSON.parse(data);
+    const parsed = JSON.parse(data);
+    // Support both {"id": "..."} and {"ticketId": "..."} formats
+    ticketId = parsed.id || parsed.ticketId || null;
   } catch(e) {
-    // Maybe it's just a plain ticket ID string
-    const ticket = STORE.tickets.find(t => t.id === data.trim().toUpperCase());
-    if (ticket) {
-      parsed = { ticketId: ticket.id };
-    } else {
-      showScanResult('invalid', null);
-      return;
-    }
+    // Not JSON — treat the raw string as a plain ticket ID
+    ticketId = data.trim().toUpperCase();
   }
 
-  const ticket = STORE.tickets.find(t => t.id === parsed.ticketId);
-  if (!ticket) { showScanResult('invalid', null); return; }
+  if (!ticketId) {
+    showScanResult('invalid', null);
+    return;
+  }
+
+  // Normalize to uppercase for safe matching
+  ticketId = ticketId.trim().toUpperCase();
+
+  const ticket = STORE.tickets.find(t => t.id === ticketId);
+  if (!ticket) {
+    console.warn('[QR] No ticket found for ID:', ticketId);
+    showScanResult('invalid', null);
+    return;
+  }
 
   const event = STORE.events.find(e => e.id === ticket.eventId);
 
@@ -810,12 +813,9 @@ function showScanResult(status, ticket, event) {
     </div>`;
   toast(c.title, status === 'valid' ? 'ok' : status === 'used' ? 'warn' : 'err');
 
-  // After upload scan, show the drop zone again after a delay for next scan
+  // After upload scan, restore drop zone after a delay
   if (activeScannerTab === 'upload') {
-    setTimeout(() => {
-      document.getElementById('upload-drop-zone').style.display = 'block';
-      document.getElementById('upload-preview-area').style.display = 'none';
-    }, 3000);
+    setTimeout(() => resetUploadUI(), 3000);
   }
 }
 
