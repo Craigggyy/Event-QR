@@ -525,22 +525,56 @@ function saveEvent() {
   };
 
   if (id) {
-    const idx = STORE.events.findIndex(e => e.id === id);
-    STORE.events[idx] = { ...STORE.events[idx], ...eventData };
-    toast('Event updated!', 'ok');
-  } else {
-    STORE.events.push({ id: 'e' + Date.now(), sold: 0, ...eventData });
-    toast('Event created!', 'ok');
-  }
+  const idx = STORE.events.findIndex(e => e.id === id);
+  STORE.events[idx] = { ...STORE.events[idx], ...eventData };
+
+  // 🔔 NOTIFICATION (UPDATE)
+  saveNotification({
+    id: 'n' + Date.now(),
+    title: 'Event Updated',
+    message: `${eventData.title} has been updated`,
+    link: 'index.html', // where user will go
+    time: new Date().toISOString(),
+    read: false
+  });
+
+  toast('Event updated!', 'ok');
+
+} else {
+  STORE.events.push({ id: 'e' + Date.now(), sold: 0, ...eventData });
+
+  // 🔔 NOTIFICATION (NEW EVENT)
+  saveNotification({
+    id: 'n' + Date.now(),
+    title: 'New Event',
+    message: `${eventData.title} is now available`,
+    link: 'index.html',
+    time: new Date().toISOString(),
+    read: false
+  });
+
+  toast('Event created!', 'ok');
+}
   saveStore();
   closeModal('event-form-modal');
   renderAdminEvents();
 }
 
 function deleteEvent(id) {
+  const event = STORE.events.find(e => e.id === id);
+
   if (!confirm('Delete this event? All associated tickets will also be removed.')) return;
+
   STORE.events  = STORE.events.filter(e => e.id !== id);
   STORE.tickets = STORE.tickets.filter(t => t.eventId !== id);
+
+  saveNotification({
+    message: `🗑 Event deleted: ${event?.title || 'Unknown Event'}`,
+    link: 'admin.html?page=admin-events',
+    time: new Date().toISOString(),
+    read: false
+  });
+
   saveStore();
   renderAdminEvents();
   toast('Event deleted', 'warn');
@@ -1042,6 +1076,16 @@ function revokeTicket(id) {
   saveStore();
   renderAttendees();
   toast('Ticket revoked', 'warn');
+}
+
+function getNotifications() {
+  return JSON.parse(localStorage.getItem('notifications') || '[]');
+}
+
+function saveNotification(n) {
+  const notes = getNotifications();
+  notes.unshift(n);
+  localStorage.setItem('notifications', JSON.stringify(notes));
 }
 </script>
 </body>

@@ -697,3 +697,131 @@ canvas { max-width: 100%; }
   .scanner-tabs { flex-wrap: wrap; }
   .scanner-tab  { font-size: 11px; padding: 7px 8px; }
 }
+
+/* 🔔 Button */
+.notify-btn {
+  position: relative;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--t1);
+  transition: 0.25s ease;
+}
+
+.notify-btn:hover {
+  color: var(--p2);
+  transform: scale(1.08);
+}
+
+/* 🔴 Dot */
+.notify-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  background: var(--err);
+  border-radius: 50%;
+  display: none;
+  box-shadow: 0 0 8px var(--err);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%   { transform: scale(1); opacity: 1; }
+  70%  { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* 📦 Panel (GLASS EFFECT) */
+.notif-panel {
+  position: fixed;
+  top: 65px;
+  right: 20px;
+  width: 320px;
+  max-height: 420px;
+  overflow-y: auto;
+
+  background: rgba(20, 20, 35, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.06);
+
+  box-shadow: 
+    0 20px 40px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+
+  display: none;
+  z-index: 9999;
+
+  animation: slideDown 0.25s ease;
+}
+
+/* ✨ Smooth entrance */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 🔝 Header */
+.notif-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 600;
+
+  color: var(--t1);
+
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+/* 📄 Item */
+.notif-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: 0.2s ease;
+
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.notif-item:last-child {
+  border-bottom: none;
+}
+
+/* ✨ Hover glow */
+.notif-item:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+/* 📝 Message */
+.notif-message {
+  font-size: 13px;
+  color: var(--t1);
+  line-height: 1.4;
+}
+
+/* ⏱ Time */
+.notif-time {
+  font-size: 11px;
+  color: var(--t3);
+  margin-top: 4px;
+}
+
+/* 📭 Empty state */
+.notif-empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--t3);
+  opacity: 0.8;
+}
