@@ -109,16 +109,9 @@
         <input class="form-input" id="login-pass" type="password" placeholder="••••••••"
                onkeydown="if(event.key==='Enter') doLogin()">
       </div>
-      <div class="checkbox-row">
-        <input type="checkbox" id="remember">
-        <label for="remember">Remember me for 30 days</label>
-      </div>
+      
       <button class="btn-cta btn-full" onclick="doLogin()">Sign In →</button>
-      <div class="demo-creds">
-        <div class="demo-creds-title">Demo Accounts</div>
-        <div class="demo-creds-item">Admin: <span class="demo-creds-val">admin@demo.com / admin123</span></div>
-        <div class="demo-creds-item">User: <span class="demo-creds-val">user@demo.com / user123</span></div>
-      </div>
+      
     </div>
 
     <div id="register-form" style="display:none">
@@ -144,7 +137,6 @@
         <label class="form-label">I am a…</label>
         <select class="form-input form-select" id="reg-role">
           <option value="user">Attendee — I want to buy tickets</option>
-          <option value="admin">Event Organizer — I want to manage events</option>
         </select>
       </div>
       <button class="btn-cta btn-full" onclick="doRegister()">Create Account →</button>
