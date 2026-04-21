@@ -7,6 +7,346 @@
 <link rel="stylesheet" href="style.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════
+   CAROUSEL / SLIDER LAYOUT
+═══════════════════════════════════════ */
+.lp-carousel-wrapper {
+  position: relative;
+  padding: 0 56px;
+}
+
+.lp-events-grid {
+  display: flex;
+  gap: 20px;
+  overflow: hidden;
+  padding: 8px 4px 16px;
+}
+
+/* Carousel arrow buttons */
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-60%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.18);
+  background: rgba(20,20,40,0.85);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  z-index: 10;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  line-height: 1;
+  padding: 0;
+}
+.carousel-arrow:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.45);
+  transform: translateY(-60%) scale(1.1);
+}
+.carousel-arrow:active { transform: translateY(-60%) scale(0.96); }
+.carousel-arrow.left  { left: 0; }
+.carousel-arrow.right { right: 0; }
+.carousel-arrow:disabled {
+  opacity: 0.25;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ── POSTER-STYLE CARD ── */
+.lp-event-card {
+  background: var(--surface, #1a1a2e);
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 220px;
+  border: 1px solid rgba(255,255,255,0.07);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  animation: fadeUp 0.45s ease both;
+}
+.lp-event-card:hover {
+  transform: translateY(-7px);
+  box-shadow: 0 22px 52px rgba(0,0,0,0.45);
+}
+
+/* Poster image area — 3:4 ratio */
+.lp-event-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lp-thumb-glow {
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  filter: blur(40px);
+}
+.lp-event-emoji {
+  font-size: 80px;
+  z-index: 1;
+  filter: drop-shadow(0 4px 24px rgba(0,0,0,0.55));
+  transition: transform 0.3s ease;
+}
+.lp-event-card:hover .lp-event-emoji { transform: scale(1.12); }
+
+.lp-event-date-pill {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  padding: 5px 9px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+  z-index: 2;
+  border: 1px solid rgba(255,255,255,0.14);
+}
+.lp-date-month {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: rgba(255,255,255,0.7);
+  font-family: 'JetBrains Mono', monospace;
+}
+.lp-date-day {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  font-family: 'Syne', sans-serif;
+}
+.lp-event-cat-pill {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid;
+  z-index: 2;
+  backdrop-filter: blur(6px);
+}
+
+/* Card body */
+.lp-event-body {
+  padding: 13px 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex: 1;
+}
+.lp-event-status-row { display: flex; }
+.lp-event-title {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Syne', sans-serif;
+  color: #fff;
+  line-height: 1.3;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lp-meta-item {
+  font-size: 11px;
+  color: rgba(255,255,255,0.52);
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* Colored date badge */
+.lp-event-date-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 5px 9px;
+  border-radius: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.2px;
+  width: fit-content;
+  margin-top: auto;
+}
+
+/* BUY TICKETS button */
+.lp-view-btn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 10px 0;
+  background: #00c896;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Syne', sans-serif;
+  transition: background 0.2s, transform 0.15s;
+}
+.lp-view-btn:hover { background: #00e6ad; transform: scale(1.02); }
+.lp-view-btn.sold-out {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.38);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Slide animations */
+.lp-events-grid.sliding-left  { animation: slideLeft  0.38s cubic-bezier(.4,0,.2,1) both; }
+.lp-events-grid.sliding-right { animation: slideRight 0.38s cubic-bezier(.4,0,.2,1) both; }
+@keyframes slideLeft  { from { opacity:.5; transform:translateX(40px);  } to { opacity:1; transform:translateX(0); } }
+@keyframes slideRight { from { opacity:.5; transform:translateX(-40px); } to { opacity:1; transform:translateX(0); } }
+@keyframes fadeUp     { from { opacity:0;  transform:translateY(18px);  } to { opacity:1; transform:translateY(0); } }
+
+/* Dot indicators */
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 18px;
+}
+.carousel-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  border: none;
+  padding: 0;
+}
+.carousel-dot.active {
+  background: #00c896;
+  transform: scale(1.4);
+}
+
+/* ═══════════════════════════════════════
+   FORGOT PASSWORD — BEAUTIFUL LINK
+═══════════════════════════════════════ */
+.forgot-pw-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  background: linear-gradient(90deg, #00c896 0%, #7b6fff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  cursor: pointer;
+  border: none;
+  padding: 2px 0;
+  text-decoration: none;
+  transition: filter 0.2s;
+}
+.forgot-pw-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0%;
+  height: 1.5px;
+  background: linear-gradient(90deg, #00c896, #7b6fff);
+  transition: width 0.3s ease;
+  border-radius: 1px;
+}
+.forgot-pw-link:hover::after { width: 100%; }
+.forgot-pw-link:hover { filter: brightness(1.2); }
+
+.form-group-row-space {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -4px;
+  margin-bottom: 8px;
+}
+
+/* Forgot / Change password form */
+#forgot-pw-form { display: none; }
+
+.fp-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.42);
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 14px;
+  transition: color 0.2s;
+}
+.fp-back-btn:hover { color: rgba(255,255,255,0.85); }
+
+.fp-heading {
+  font-family: 'Syne', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 4px;
+}
+.fp-sub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  font-family: 'DM Sans', sans-serif;
+  margin: 0 0 18px;
+  line-height: 1.55;
+}
+
+/* Password strength bar */
+.pw-strength-wrap {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pw-strength-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+.pw-strength-fill {
+  height: 100%;
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+.pw-strength-label {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(255,255,255,0.38);
+  transition: color 0.3s;
+}
+</style>
 </head>
 <body class="landing-body">
 
@@ -63,12 +403,19 @@
       </div>
       <div class="lp-events-count" id="lp-events-count">6 events</div>
     </div>
-    <div class="lp-events-grid" id="lp-events-grid"></div>
-  </section>
 
+    <!-- CAROUSEL -->
+    <div class="lp-carousel-wrapper">
+      <button class="carousel-arrow left"  id="arrow-left"  onclick="slideCarousel('left')"  aria-label="Previous">&#8249;</button>
+      <div class="lp-events-grid" id="lp-events-grid"></div>
+      <button class="carousel-arrow right" id="arrow-right" onclick="slideCarousel('right')" aria-label="Next">&#8250;</button>
+    </div>
+    <div class="carousel-dots" id="carousel-dots"></div>
+  </section>
 
 </div>
 
+<!-- EVENT DRAWER -->
 <div id="lp-drawer-bg" class="lp-drawer-bg" onclick="closeDrawer()">
   <div id="lp-drawer" class="lp-drawer" onclick="event.stopPropagation()">
     <button class="lp-drawer-close" onclick="closeDrawer()">✕</button>
@@ -99,6 +446,7 @@
       <div class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Create Account</div>
     </div>
 
+    <!-- LOGIN FORM -->
     <div id="login-form">
       <div class="form-group">
         <label class="form-label">Email Address</label>
@@ -109,11 +457,39 @@
         <input class="form-input" id="login-pass" type="password" placeholder="••••••••"
                onkeydown="if(event.key==='Enter') doLogin()">
       </div>
-      
+      <div class="form-group-row-space">
+        <button class="forgot-pw-link" onclick="showForgotPassword()">🔑 Forgot password?</button>
+      </div>
       <button class="btn-cta btn-full" onclick="doLogin()">Sign In →</button>
-      
     </div>
 
+    <!-- CHANGE PASSWORD FORM -->
+    <div id="forgot-pw-form">
+      <button class="fp-back-btn" onclick="hideForgotPassword()">&#8592; Back to Sign In</button>
+      <p class="fp-heading">Reset Your Password</p>
+      <p class="fp-sub">Enter your registered email and set a new password.</p>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input class="form-input" id="fp-email" type="email" placeholder="your@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">New Password</label>
+        <input class="form-input" id="fp-newpass" type="password" placeholder="Min. 6 characters"
+               oninput="checkPwStrength(this.value)">
+        <div class="pw-strength-wrap">
+          <div class="pw-strength-bar"><div class="pw-strength-fill" id="pw-strength-fill"></div></div>
+          <span class="pw-strength-label" id="pw-strength-label">Enter a password</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm New Password</label>
+        <input class="form-input" id="fp-confirmpass" type="password" placeholder="Re-enter your new password">
+      </div>
+      <button class="btn-cta btn-full" onclick="doChangePassword()" style="margin-top:6px">Change Password →</button>
+    </div>
+
+    <!-- REGISTER FORM -->
     <div id="register-form" style="display:none">
       <div class="form-row">
         <div class="form-group">
@@ -133,14 +509,9 @@
         <label class="form-label">Password</label>
         <input class="form-input" id="reg-pass" type="password" placeholder="Min. 6 characters">
       </div>
-      <div class="form-group">
-        <label class="form-label">I am a…</label>
-        <select class="form-input form-select" id="reg-role">
-          <option value="user">Attendee — I want to buy tickets</option>
-        </select>
-      </div>
       <button class="btn-cta btn-full" onclick="doRegister()">Create Account →</button>
     </div>
+
   </div>
 </div>
 
@@ -153,58 +524,126 @@
   if (s) window.location.href = s.role === 'admin' ? 'admin.html' : 'attendee.html';
 })();
 
-let landingFilter = 'all';
+/* ─────────────────────────────────────
+   CAROUSEL
+───────────────────────────────────── */
+const CARDS_PER_PAGE = 4;
+let carouselPage  = 0;
+let filteredEvents = [];
+let landingFilter  = 'all';
+
+function totalPages() {
+  return Math.max(1, Math.ceil(filteredEvents.length / CARDS_PER_PAGE));
+}
 
 function setLandingFilter(cat, el) {
   landingFilter = cat;
   document.querySelectorAll('.lp-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
-  filterLandingEvents();
+  carouselPage = 0;
+  buildFilteredEvents();
+  renderCarouselPage();
+  updateCarouselUI();
 }
 
 function filterLandingEvents() {
-  const q = (document.getElementById('hero-search').value || '').toLowerCase();
-  const grid = document.getElementById('lp-events-grid');
-  const count = document.getElementById('lp-events-count');
-  const cards = grid.querySelectorAll('.lp-event-card');
-  let visible = 0;
-  cards.forEach(card => {
-    const catMatch = landingFilter === 'all' || card.dataset.category === landingFilter;
-    const textMatch = !q || card.dataset.search.includes(q);
-    const show = catMatch && textMatch;
-    card.style.display = show ? '' : 'none';
-    if (show) visible++;
-  });
-  count.textContent = visible + (visible === 1 ? ' event' : ' events');
+  carouselPage = 0;
+  buildFilteredEvents();
+  renderCarouselPage();
+  updateCarouselUI();
 }
 
-function renderLandingEvents() {
+function buildFilteredEvents() {
+  const q = (document.getElementById('hero-search').value || '').toLowerCase();
+  filteredEvents = STORE.events.filter(ev => {
+    const catMatch  = landingFilter === 'all' || ev.category === landingFilter;
+    const textMatch = !q || (ev.title + ' ' + ev.category + ' ' + ev.venue).toLowerCase().includes(q);
+    return catMatch && textMatch;
+  });
+}
+
+function slideCarousel(dir) {
   const grid = document.getElementById('lp-events-grid');
+  if (dir === 'right' && carouselPage < totalPages() - 1) {
+    carouselPage++;
+    triggerSlideAnim(grid, 'sliding-left');
+  } else if (dir === 'left' && carouselPage > 0) {
+    carouselPage--;
+    triggerSlideAnim(grid, 'sliding-right');
+  }
+  renderCarouselPage();
+  updateCarouselUI();
+}
+
+function goToPage(page) {
+  const grid = document.getElementById('lp-events-grid');
+  const animClass = page > carouselPage ? 'sliding-left' : 'sliding-right';
+  carouselPage = page;
+  triggerSlideAnim(grid, animClass);
+  renderCarouselPage();
+  updateCarouselUI();
+}
+
+function triggerSlideAnim(el, cls) {
+  el.classList.remove('sliding-left', 'sliding-right');
+  void el.offsetWidth; // force reflow
+  el.classList.add(cls);
+  setTimeout(() => el.classList.remove('sliding-left', 'sliding-right'), 420);
+}
+
+function updateCarouselUI() {
+  document.getElementById('arrow-left').disabled  = carouselPage === 0;
+  document.getElementById('arrow-right').disabled = carouselPage >= totalPages() - 1;
+  document.getElementById('lp-events-count').textContent =
+    filteredEvents.length + (filteredEvents.length === 1 ? ' event' : ' events');
+
+  const dotsEl = document.getElementById('carousel-dots');
+  dotsEl.innerHTML = '';
+  for (let i = 0; i < totalPages(); i++) {
+    const btn = document.createElement('button');
+    btn.className = 'carousel-dot' + (i === carouselPage ? ' active' : '');
+    btn.setAttribute('aria-label', 'Page ' + (i + 1));
+    const pg = i;
+    btn.onclick = () => goToPage(pg);
+    dotsEl.appendChild(btn);
+  }
+}
+
+function renderCarouselPage() {
+  const grid  = document.getElementById('lp-events-grid');
   grid.innerHTML = '';
-  STORE.events.forEach((ev, i) => {
-    const avail = ev.capacity - ev.sold;
-    const pct = Math.round((ev.sold / ev.capacity) * 100);
+  const start = carouselPage * CARDS_PER_PAGE;
+  const page  = filteredEvents.slice(start, start + CARDS_PER_PAGE);
+
+  if (page.length === 0) {
+    grid.innerHTML = '<p style="color:rgba(255,255,255,0.3);font-family:DM Sans,sans-serif;padding:40px 0;">No events found.</p>';
+    return;
+  }
+
+  page.forEach((ev, i) => {
+    const avail   = ev.capacity - ev.sold;
+    const pct     = Math.round((ev.sold / ev.capacity) * 100);
     const soldOut = avail <= 0;
     const almostFull = pct >= 70;
     const dateObj = new Date(ev.date);
-    const month = dateObj.toLocaleString('en', { month: 'short' }).toUpperCase();
-    const day = dateObj.getDate();
+    const month   = dateObj.toLocaleString('en', { month: 'short' }).toUpperCase();
+    const day     = dateObj.getDate();
+    const dateLabel = dateObj.toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric'
+    }).toUpperCase();
 
-    let statusBadge = soldOut
+    const statusBadge = soldOut
       ? '<span class="lp-badge lp-badge-sold">Sold Out</span>'
       : almostFull
         ? '<span class="lp-badge lp-badge-hot">🔥 Almost Full</span>'
         : '<span class="lp-badge lp-badge-avail">✓ Available</span>';
 
-    const priceStr = ev.price === 0
-      ? '<span class="lp-price-free">Free Entry</span>'
-      : '<span class="lp-price">₱' + ev.price.toLocaleString() + '</span>';
+    const btnClass = soldOut ? 'lp-view-btn sold-out' : 'lp-view-btn';
+    const btnText  = soldOut ? 'SOLD OUT' : 'BUY TICKETS';
 
     const card = document.createElement('div');
     card.className = 'lp-event-card';
-    card.dataset.category = ev.category;
-    card.dataset.search = (ev.title + ' ' + ev.category + ' ' + ev.venue).toLowerCase();
-    card.style.animationDelay = (i * 0.07) + 's';
+    card.style.animationDelay = (i * 0.06) + 's';
     card.onclick = () => openEventDrawer(ev.id);
     card.innerHTML = `
       <div class="lp-event-thumb" style="background:${ev.color}20;border-bottom:1px solid ${ev.color}33">
@@ -219,35 +658,33 @@ function renderLandingEvents() {
       <div class="lp-event-body">
         <div class="lp-event-status-row">${statusBadge}</div>
         <h3 class="lp-event-title">${ev.title}</h3>
-        <div class="lp-event-meta">
-          <span class="lp-meta-item">📍 ${ev.venue.split(',')[0]}</span>
-          <span class="lp-meta-item">⏰ ${ev.time}</span>
-        </div>
-        <p class="lp-event-desc">${ev.desc}</p>
-        <div class="lp-event-footer">
-          <div class="lp-event-pricing">
-            ${priceStr}
-            ${ev.vipPrice ? '<span class="lp-price-vip">VIP ₱' + ev.vipPrice.toLocaleString() + '</span>' : ''}
-          </div>
-          <div class="lp-seat-info">
-            <span class="lp-seat-count">${avail}/${ev.capacity} seats left</span>
-            <div class="lp-seat-bar"><div class="lp-seat-fill" style="width:${pct}%;background:${soldOut?'var(--err)':almostFull?'var(--warn)':'var(--ok)'}"></div></div>
-          </div>
-        </div>
-        <button class="lp-view-btn">View Details & Seats →</button>
+        <span class="lp-meta-item">📍 ${ev.venue.split(',')[0]}</span>
+        <div class="lp-event-date-badge" style="background:${ev.color}cc">📅 ${dateLabel}</div>
+        <button class="${btnClass}" onclick="event.stopPropagation();openEventDrawer('${ev.id}')">${btnText}</button>
       </div>
     `;
     grid.appendChild(card);
   });
 }
 
+function initCarousel() {
+  buildFilteredEvents();
+  renderCarouselPage();
+  updateCarouselUI();
+}
+
+/* ─────────────────────────────────────
+   EVENT DRAWER
+───────────────────────────────────── */
 function openEventDrawer(eventId) {
   const ev = STORE.events.find(e => e.id === eventId);
   if (!ev) return;
-  const avail = ev.capacity - ev.sold;
-  const pct = Math.round((ev.sold / ev.capacity) * 100);
+  const avail   = ev.capacity - ev.sold;
+  const pct     = Math.round((ev.sold / ev.capacity) * 100);
   const dateObj = new Date(ev.date);
-  const dateStr = dateObj.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const dateStr = dateObj.toLocaleDateString('en-PH', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
 
   document.getElementById('lp-drawer-content').innerHTML = `
     <div class="drawer-hero" style="background:linear-gradient(135deg,${ev.color}30,${ev.color}10)">
@@ -299,12 +736,12 @@ function openEventDrawer(eventId) {
 
 function generateMiniSeatMap(ev) {
   const taken = getTakenSeats(ev.id);
-  const rows = ['A','B','C','D','E','F','G','H','I','J'];
+  const rows  = ['A','B','C','D','E','F','G','H','I','J'];
   let html = '<div class="mini-stage">STAGE</div><div class="mini-rows">';
   rows.forEach(row => {
     html += '<div class="mini-row">';
     for (let c = 1; c <= 10; c++) {
-      const id = row + c;
+      const id  = row + c;
       const cls = taken.has(id) ? 'mini-taken' : ['A','B'].includes(row) ? 'mini-vip' : 'mini-avail';
       html += `<div class="mini-seat ${cls}" title="Seat ${id}"></div>`;
     }
@@ -319,6 +756,9 @@ function closeDrawer() {
   document.body.style.overflow = '';
 }
 
+/* ─────────────────────────────────────
+   AUTH MODAL
+───────────────────────────────────── */
 function openAuth(tab) {
   closeDrawer();
   document.getElementById('auth-overlay').classList.add('open');
@@ -329,6 +769,7 @@ function openAuth(tab) {
 function closeAuth() {
   document.getElementById('auth-overlay').classList.remove('open');
   document.body.style.overflow = '';
+  hideForgotPassword();
 }
 
 function closeAuthOverlay(e) {
@@ -336,12 +777,88 @@ function closeAuthOverlay(e) {
 }
 
 function switchAuthTab(tab) {
+  hideForgotPassword();
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   document.getElementById('login-form').style.display    = tab === 'login'    ? 'block' : 'none';
   document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
 }
 
+/* ─────────────────────────────────────
+   FORGOT / CHANGE PASSWORD
+───────────────────────────────────── */
+function showForgotPassword() {
+  document.getElementById('login-form').style.display     = 'none';
+  document.getElementById('forgot-pw-form').style.display = 'block';
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  // clear fields
+  ['fp-email','fp-newpass','fp-confirmpass'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  resetPwStrength();
+}
+
+function hideForgotPassword() {
+  document.getElementById('forgot-pw-form').style.display = 'none';
+  document.getElementById('login-form').style.display     = 'block';
+  document.getElementById('tab-login').classList.add('active');
+}
+
+function checkPwStrength(val) {
+  const fill  = document.getElementById('pw-strength-fill');
+  const label = document.getElementById('pw-strength-label');
+  let score = 0;
+  if (val.length >= 6)           score++;
+  if (val.length >= 10)          score++;
+  if (/[A-Z]/.test(val))         score++;
+  if (/[0-9]/.test(val))         score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+
+  const levels = [
+    { w:'0%',   c:'transparent',  t:'Enter a password' },
+    { w:'20%',  c:'#ff4d4d',      t:'Very Weak' },
+    { w:'40%',  c:'#ff944d',      t:'Weak' },
+    { w:'60%',  c:'#ffd24d',      t:'Fair' },
+    { w:'80%',  c:'#8be14b',      t:'Strong' },
+    { w:'100%', c:'#00c896',      t:'Very Strong' },
+  ];
+  const lvl = val.length === 0 ? 0 : Math.min(score + 1, 5);
+  fill.style.width      = levels[lvl].w;
+  fill.style.background = levels[lvl].c;
+  label.textContent     = levels[lvl].t;
+  label.style.color     = lvl === 0 ? 'rgba(255,255,255,0.38)' : levels[lvl].c;
+}
+
+function resetPwStrength() {
+  const fill  = document.getElementById('pw-strength-fill');
+  const label = document.getElementById('pw-strength-label');
+  fill.style.width      = '0%';
+  label.textContent     = 'Enter a password';
+  label.style.color     = 'rgba(255,255,255,0.38)';
+}
+
+function doChangePassword() {
+  const email   = document.getElementById('fp-email').value.trim();
+  const newPass = document.getElementById('fp-newpass').value;
+  const confirm = document.getElementById('fp-confirmpass').value;
+
+  if (!email)             { toast('Please enter your email address', 'err'); return; }
+  if (!newPass)           { toast('Please enter a new password', 'err'); return; }
+  if (newPass.length < 6) { toast('Password must be at least 6 characters', 'err'); return; }
+  if (newPass !== confirm){ toast('Passwords do not match', 'err'); return; }
+
+  const user = STORE.users.find(u => u.email === email);
+  if (!user) { toast('No account found with that email', 'err'); return; }
+
+  user.password = newPass;
+  saveStore();
+  toast('Password changed successfully! 🎉', 'ok');
+  setTimeout(() => hideForgotPassword(), 900);
+}
+
+/* ─────────────────────────────────────
+   LOGIN / REGISTER
+───────────────────────────────────── */
 function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
@@ -358,7 +875,7 @@ function doRegister() {
   const lname = document.getElementById('reg-lname').value.trim();
   const email = document.getElementById('reg-email').value.trim();
   const pass  = document.getElementById('reg-pass').value;
-  const role  = document.getElementById('reg-role').value;
+  const role  = document.getElementById('reg-role') ? document.getElementById('reg-role').value : 'attendee';
   if (!fname || !email || !pass) { toast('Please fill all required fields', 'err'); return; }
   if (STORE.users.find(u => u.email === email)) { toast('Email already registered', 'err'); return; }
   if (pass.length < 6) { toast('Password must be at least 6 characters', 'err'); return; }
@@ -370,7 +887,10 @@ function doRegister() {
   setTimeout(() => { window.location.href = user.role === 'admin' ? 'admin.html' : 'attendee.html'; }, 600);
 }
 
-renderLandingEvents();
+/* ─────────────────────────────────────
+   INIT
+───────────────────────────────────── */
+initCarousel();
 </script>
 </body>
 </html>
