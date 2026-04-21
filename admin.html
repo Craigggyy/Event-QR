@@ -7,12 +7,232 @@
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+/* ── ATTENDEES PAGE ENHANCEMENTS ── */
+.attendees-toolbar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.attendee-search-wrap {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg2); border: 1.5px solid var(--border);
+  border-radius: var(--r2); padding: 10px 16px; flex: 1; min-width: 220px;
+  transition: all .2s;
+}
+.attendee-search-wrap:focus-within { border-color: var(--p1); box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+.attendee-search-wrap input {
+  background: transparent; border: none; outline: none;
+  color: var(--t1); font-size: 13px; font-family: inherit; width: 100%;
+}
+.attendee-search-wrap input::placeholder { color: var(--t3); }
+
+/* Attendee grid view */
+.attendee-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 4px;
+}
+.attendee-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  transition: all .25s cubic-bezier(.34,1.1,.64,1);
+  position: relative;
+}
+.attendee-card:hover {
+  border-color: var(--border2);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 36px rgba(0,0,0,.5), 0 0 0 1px var(--border2);
+}
+.attendee-card-accent {
+  height: 4px;
+  background: var(--grad);
+}
+.attendee-card-accent.vip { background: linear-gradient(90deg,#f59e0b,#fbbf24); }
+.attendee-card-accent.used { background: linear-gradient(90deg,#10b981,#34d399); }
+
+.attendee-card-body { padding: 18px; }
+.attendee-top {
+  display: flex; align-items: flex-start; gap: 13px; margin-bottom: 14px;
+}
+.attendee-avatar {
+  width: 42px; height: 42px; border-radius: 12px;
+  background: var(--grad);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: 800; flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(99,102,241,.35);
+  color: #fff;
+}
+.attendee-avatar.vip {
+  background: linear-gradient(135deg,#f59e0b,#fbbf24);
+  box-shadow: 0 4px 12px rgba(245,158,11,.35);
+  color: #000;
+}
+.attendee-name { font-size: 14px; font-weight: 700; color: var(--t1); margin-bottom: 3px; }
+.attendee-email { font-size: 11px; color: var(--t3); }
+.attendee-badges { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+
+/* Seat spotlight */
+.seat-spotlight {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 12px;
+}
+.seat-spotlight-number {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: rgba(99,102,241,.15);
+  border: 2px solid rgba(99,102,241,.4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800; color: var(--p2);
+  flex-shrink: 0; font-family: 'JetBrains Mono', monospace;
+}
+.seat-spotlight-number.vip {
+  background: rgba(245,158,11,.15);
+  border-color: rgba(245,158,11,.5);
+  color: var(--warn);
+}
+.seat-spotlight-info { flex: 1; min-width: 0; }
+.seat-spotlight-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--t3); font-weight: 700; margin-bottom: 3px; }
+.seat-spotlight-event { font-size: 12px; font-weight: 600; color: var(--t1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seat-spotlight-row { font-size: 11px; color: var(--t2); margin-top: 2px; }
+
+/* Mini seat map in card */
+.mini-seatmap-wrap {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 10px; margin-bottom: 12px;
+  position: relative; overflow: hidden;
+}
+.mini-seatmap-title {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--t3); font-weight: 700; margin-bottom: 8px;
+}
+.mini-seat-grid {
+  display: grid;
+  grid-template-columns: 14px repeat(10, 1fr);
+  gap: 2px;
+}
+.mini-seat-row-label {
+  font-size: 8px; color: var(--t3); display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace; font-weight: 700;
+}
+.mini-seat {
+  width: 100%; aspect-ratio: 1; border-radius: 2px;
+  background: var(--bg2); border: 1px solid rgba(99,102,241,.1);
+}
+.mini-seat.taken { background: rgba(239,68,68,.2); border-color: rgba(239,68,68,.2); }
+.mini-seat.highlight {
+  background: var(--p1); border-color: var(--p2);
+  box-shadow: 0 0 6px rgba(99,102,241,.8);
+  animation: seatPulse 1.8s ease infinite;
+}
+.mini-seat.highlight.vip {
+  background: var(--warn); border-color: #fcd34d;
+  box-shadow: 0 0 6px rgba(245,158,11,.8);
+}
+.mini-seat.used { background: rgba(16,185,129,.25); border-color: rgba(16,185,129,.3); }
+@keyframes seatPulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .7; transform: scale(1.15); }
+}
+
+.attendee-card-footer {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+}
+.attendee-card-footer .btn { flex: 1; font-size: 11px; min-height: 32px; padding: 6px 10px; }
+
+/* Stats strip */
+.attendee-stats-strip {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px;
+}
+.attendee-stat {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r2);
+  padding: 16px 18px; display: flex; align-items: center; gap: 12px;
+}
+.attendee-stat-icon { font-size: 24px; }
+.attendee-stat-val { font-size: 22px; font-weight: 800; font-family: 'Playfair Display', serif; }
+.attendee-stat-lbl { font-size: 11px; color: var(--t3); margin-top: 2px; }
+
+/* View toggle */
+.view-toggle { display: flex; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); padding: 3px; gap: 3px; }
+.view-toggle-btn {
+  padding: 7px 13px; border-radius: 8px; border: none; background: transparent;
+  color: var(--t3); cursor: pointer; font-size: 14px; transition: all .18s;
+  min-height: 34px;
+}
+.view-toggle-btn.active { background: var(--grad); color: #fff; box-shadow: 0 2px 8px rgba(99,102,241,.3); }
+
+/* Filter tabs for attendees */
+.att-filter-tabs {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.att-filter-tab {
+  padding: 7px 16px; border-radius: 22px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid var(--border);
+  color: var(--t2); background: var(--bg2); transition: all .18s;
+}
+.att-filter-tab.active {
+  border-color: var(--p1); color: var(--p2); background: rgba(99,102,241,.1);
+}
+
+/* Ticket ID copy button */
+.ticket-id-btn {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--t3);
+  background: var(--bg2); padding: 3px 8px; border-radius: 5px;
+  border: 1px solid var(--border); cursor: pointer; transition: all .15s;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.ticket-id-btn:hover { border-color: var(--border2); color: var(--p2); }
+
+/* Empty state for attendees */
+.attendee-empty {
+  grid-column: 1 / -1;
+  text-align: center; padding: 72px 24px;
+}
+.attendee-empty-icon { font-size: 56px; margin-bottom: 16px; opacity: .5; }
+.attendee-empty-title { font-size: 18px; font-weight: 700; color: var(--t2); margin-bottom: 8px; font-family: 'Playfair Display', serif; }
+.attendee-empty-sub { font-size: 13px; color: var(--t3); }
+
+/* Attendee detail modal */
+.att-detail-hero {
+  padding: 28px; background: var(--bg2); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 20px;
+}
+.att-detail-avatar {
+  width: 64px; height: 64px; border-radius: 18px;
+  background: var(--grad); display: flex; align-items: center;
+  justify-content: center; font-size: 26px; font-weight: 800;
+  color: #fff; box-shadow: 0 6px 20px rgba(99,102,241,.4); flex-shrink: 0;
+}
+.att-detail-avatar.vip {
+  background: linear-gradient(135deg,#f59e0b,#fbbf24);
+  box-shadow: 0 6px 20px rgba(245,158,11,.4); color: #000;
+}
+.att-detail-info-name { font-size: 20px; font-weight: 800; font-family: 'Playfair Display', serif; }
+.att-detail-info-email { font-size: 13px; color: var(--t3); margin-top: 4px; }
+.att-detail-info-meta { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+/* Full seat map in modal — enlarged */
+.att-full-seatmap { padding: 20px 28px; }
+.att-full-seatmap .seat-grid { gap: 6px; }
+.att-full-seatmap .seat-btn { font-size: 11px; border-radius: 6px; min-height: 32px; }
+
+@media (max-width: 900px) {
+  .attendee-stats-strip { grid-template-columns: repeat(2,1fr); }
+  .attendee-grid { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
 
 <div id="shell">
 
-  
   <nav id="sidebar">
     <div class="sb-logo">
       <div class="sb-logo-icon">🎫</div>    
@@ -28,10 +248,10 @@
       <div class="sb-nav-item" onclick="navigate('scanner')" id="nav-scanner">
         <span class="icon">📷</span><span class="sb-nav-label">QR Scanner</span>
       </div>
-      <div class="sb-nav-item active" onclick="navigate('admin-events')" id="nav-admin-events">
+      <div class="sb-nav-item" onclick="navigate('admin-events')" id="nav-admin-events">
         <span class="icon">📋</span><span class="sb-nav-label">Manage Events</span>
       </div>
-      <div class="sb-nav-item" onclick="navigate('attendees')" id="nav-attendees">
+      <div class="sb-nav-item active" onclick="navigate('attendees')" id="nav-attendees">
         <span class="icon">👥</span><span class="sb-nav-label">Attendees</span>
       </div>
     </div>
@@ -48,12 +268,10 @@
     </div>
   </nav>
 
-  <!-- MAIN -->
   <div id="main">
 
-    <!-- TOPBAR -->
     <div id="topbar">
-      <div class="topbar-title" id="topbar-title">Manage Events</div>
+      <div class="topbar-title" id="topbar-title">Attendees</div>
       <div class="topbar-right">
         <div class="topbar-badge">Admin</div>
         <button class="btn btn-primary btn-sm" onclick="openCreateEvent()">+ New Event</button>
@@ -61,7 +279,7 @@
     </div>
 
     <!-- ── PAGE: MANAGE EVENTS ── -->
-    <div class="page active" id="page-admin-events">
+    <div class="page" id="page-admin-events">
       <div class="sec-header">
         <div>
           <div class="sec-title">Events</div>
@@ -91,20 +309,17 @@
           Use your camera to scan a ticket QR code, or upload a QR image file
         </p>
 
-        <!-- ── TABS ── -->
         <div class="scanner-tabs">
           <button class="scanner-tab active" id="tab-camera" onclick="switchScannerTab('camera')">📷 Camera</button>
           <button class="scanner-tab" id="tab-upload" onclick="switchScannerTab('upload')">🖼 Upload Image</button>
           <button class="scanner-tab" id="tab-manual" onclick="switchScannerTab('manual')">⌨️ Manual Entry</button>
         </div>
 
-        <!-- ── TAB: CAMERA ── -->
         <div class="scanner-tab-panel" id="panel-camera">
           <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px">
             <button class="btn btn-primary" onclick="startScanner()" id="scan-start-btn">▶ Start Camera</button>
             <button class="btn btn-ghost" onclick="stopScanner()" id="scan-stop-btn" style="display:none">■ Stop Camera</button>
           </div>
-
           <div class="video-wrapper" id="video-wrapper" style="display:none">
             <video id="scanner-video" autoplay playsinline muted></video>
             <canvas id="scanner-canvas" style="display:none"></canvas>
@@ -116,13 +331,11 @@
               </div>
             </div>
           </div>
-
           <p style="font-size:12px;color:var(--t3);margin-top:8px">
             💡 Make sure camera permissions are allowed in your browser settings
           </p>
         </div>
 
-        <!-- ── TAB: UPLOAD IMAGE ── -->
         <div class="scanner-tab-panel" id="panel-upload" style="display:none">
           <div class="upload-drop-zone" id="upload-drop-zone" onclick="document.getElementById('qr-file-input').click()" ondrop="handleFileDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
             <div class="upload-icon">🖼</div>
@@ -131,8 +344,6 @@
             <div class="upload-formats">Supports: PNG, JPG, JPEG, GIF, WebP, BMP</div>
           </div>
           <input type="file" id="qr-file-input" accept="image/*" style="display:none" onchange="handleFileUpload(event)">
-
-          <!-- Preview area -->
           <div id="upload-preview-area" style="display:none;margin-top:16px">
             <div style="position:relative;display:inline-block;border-radius:12px;overflow:hidden;border:2px solid var(--border2)">
               <img id="upload-preview-img" style="max-width:280px;max-height:280px;display:block" alt="QR preview">
@@ -142,13 +353,11 @@
               <button class="btn btn-primary btn-sm" onclick="document.getElementById('qr-file-input').click()">📁 Choose Different File</button>
             </div>
           </div>
-
           <p style="font-size:12px;color:var(--t3);margin-top:12px">
             💡 Upload a screenshot or saved image of the ticket QR code to validate it
           </p>
         </div>
 
-        <!-- ── TAB: MANUAL ── -->
         <div class="scanner-tab-panel" id="panel-manual" style="display:none">
           <p style="font-size:13px;color:var(--t3);margin-bottom:10px">Enter the ticket ID printed on the ticket:</p>
           <div style="display:flex;gap:10px">
@@ -157,11 +366,10 @@
             <button class="btn btn-primary" onclick="manualCheckIn()">Check In</button>
           </div>
           <p style="font-size:12px;color:var(--t3);margin-top:10px">
-            💡 The ticket ID is the monospace code shown on the bottom of each ticket (e.g. TICKET-AB3XY9)
+            💡 The ticket ID is the monospace code shown on the bottom of each ticket
           </p>
         </div>
 
-        <!-- ── SHARED RESULT AREA ── -->
         <div id="scan-result-area"></div>
       </div>
     </div>
@@ -189,28 +397,60 @@
     </div>
 
     <!-- ── PAGE: ATTENDEES ── -->
-    <div class="page" id="page-attendees">
-      <div class="sec-header">
+    <div class="page active" id="page-attendees">
+      <div class="sec-header" style="margin-bottom:16px">
         <div>
           <div class="sec-title">Attendees</div>
-          <div class="sec-sub">All ticket holders and check-in status</div>
+          <div class="sec-sub">All ticket holders with seat positions</div>
         </div>
-        <div style="display:flex;gap:10px">
-          <select class="form-input form-select" id="attendee-filter-event" style="width:220px" onchange="renderAttendees()">
+        <button class="btn btn-primary btn-sm" onclick="exportAttendees()">⬇ Export CSV</button>
+      </div>
+
+      <!-- Stats strip -->
+      <div class="attendee-stats-strip" id="att-stats-strip"></div>
+
+      <!-- Toolbar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <div style="display:flex;gap:10px;flex:1;flex-wrap:wrap;align-items:center">
+          <div class="attendee-search-wrap" style="max-width:320px">
+            <span style="color:var(--t3)">🔍</span>
+            <input type="text" id="att-search" placeholder="Search name, email, ticket ID…" oninput="renderAttendees()">
+          </div>
+          <select class="form-input form-select" id="attendee-filter-event" style="width:200px;height:44px" onchange="renderAttendees()">
             <option value="all">All Events</option>
           </select>
         </div>
+        <div class="view-toggle">
+          <button class="view-toggle-btn active" id="vt-grid" onclick="setAttView('grid')">⊞</button>
+          <button class="view-toggle-btn" id="vt-table" onclick="setAttView('table')">☰</button>
+        </div>
       </div>
-      <div class="card" style="padding:0;overflow:hidden">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Attendee</th><th>Event</th><th>Type</th>
-              <th>Seat</th><th>Ticket ID</th><th>Purchase Date</th><th>Check-In</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="attendees-tbody"></tbody>
-        </table>
+
+      <!-- Filter tabs -->
+      <div class="att-filter-tabs">
+        <div class="att-filter-tab active" onclick="setAttFilter('all',this)" data-filter="all">All Attendees</div>
+        <div class="att-filter-tab" onclick="setAttFilter('pending',this)" data-filter="pending">⏳ Not Checked In</div>
+        <div class="att-filter-tab" onclick="setAttFilter('used',this)" data-filter="used">✅ Checked In</div>
+        <div class="att-filter-tab" onclick="setAttFilter('vip',this)" data-filter="vip">⭐ VIP</div>
+        <div class="att-filter-tab" onclick="setAttFilter('general',this)" data-filter="general">General</div>
+      </div>
+
+      <!-- GRID VIEW -->
+      <div class="attendee-grid" id="attendees-grid-view"></div>
+
+      <!-- TABLE VIEW -->
+      <div id="attendees-table-view" style="display:none">
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Attendee</th><th>Event</th><th>Seat</th><th>Type</th>
+                <th>Ticket ID</th><th>Purchase Date</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="attendees-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -307,13 +547,24 @@
   </div>
 </div>
 
-<!-- TOAST -->
+<!-- ATTENDEE DETAIL MODAL -->
+<div class="modal-bg" id="attendee-detail-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title">👤 Attendee Details</div>
+      <div class="modal-close" onclick="closeModal('attendee-detail-modal')">✕</div>
+    </div>
+    <div id="attendee-detail-body"></div>
+    <div class="modal-footer" id="attendee-detail-footer">
+      <button class="btn btn-ghost" onclick="closeModal('attendee-detail-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
-<!-- ═══════════════ SCRIPTS ═══════════════ -->
 <script src="functions.js"></script>
 <script>
-/* ── Auth guard & init ──────────────────────────────────── */
 window.PAGE_TITLES = {
   'admin-events': 'Manage Events',
   'scanner':      'QR Check-In Scanner',
@@ -322,21 +573,19 @@ window.PAGE_TITLES = {
 };
 
 let currentUser = null;
+let attView = 'grid';
+let attStatusFilter = 'all';
 
 (function init() {
   currentUser = requireAuth('admin');
   if (!currentUser) return;
-
   document.getElementById('sb-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
   document.getElementById('sb-name').textContent   = currentUser.name;
-
   initModalListeners();
-
-  // WAIT FOR FULL PAGE RENDER BEFORE NAVIGATING
   window.onload = () => {
     setTimeout(() => {
-      navigate('analytics');
-      renderAnalytics();
+      navigate('attendees');
+      renderAttendees();
     }, 100);
   };
 })();
@@ -350,26 +599,29 @@ function doLogout() {
 window.onNavigate = function(page) {
   if (page !== 'scanner') stopScanner();
   if (page === 'admin-events') renderAdminEvents();
-  window.onNavigate = function(page) {
-  if (page !== 'scanner') stopScanner();
-
-  if (page === 'admin-events') renderAdminEvents();
-
-  if (page === 'analytics') {
-    setTimeout(() => {
-      renderAnalytics();
-    }, 80);
-  }
-
+  if (page === 'analytics') setTimeout(() => renderAnalytics(), 80);
   if (page === 'attendees') renderAttendees();
-
   if (page === 'scanner') resetScannerUI();
 };
-  if (page === 'attendees')    renderAttendees();
-  if (page === 'scanner')      resetScannerUI();
-};
 
-/* ── MANAGE EVENTS ──────────────────────────────────────── */
+/* ── VIEW TOGGLE ─── */
+function setAttView(v) {
+  attView = v;
+  document.getElementById('vt-grid').classList.toggle('active', v === 'grid');
+  document.getElementById('vt-table').classList.toggle('active', v === 'table');
+  document.getElementById('attendees-grid-view').style.display  = v === 'grid'  ? 'grid'  : 'none';
+  document.getElementById('attendees-table-view').style.display = v === 'table' ? 'block' : 'none';
+  renderAttendees();
+}
+
+function setAttFilter(f, el) {
+  attStatusFilter = f;
+  document.querySelectorAll('.att-filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderAttendees();
+}
+
+/* ── MANAGE EVENTS ── */
 function renderAdminEvents() {
   const tbody = document.getElementById('admin-events-tbody');
   if (!STORE.events.length) {
@@ -379,8 +631,7 @@ function renderAdminEvents() {
   tbody.innerHTML = STORE.events.map(e => {
     const takenSeats = getTakenSeats(e.id);
     const sold = takenSeats.size;
-    const revenue = STORE.tickets
-      .filter(t => t.eventId === e.id)
+    const revenue = STORE.tickets.filter(t => t.eventId === e.id)
       .reduce((sum, t) => sum + (t.type === 'vip' ? e.vipPrice : e.price), 0);
     const pct = Math.round((sold / 100) * 100);
     return `<tr>
@@ -437,11 +688,9 @@ function viewSeatMap(eventId) {
       if (isVIPRow) cls += ' vip';
       if (isTaken)  cls += ' taken';
       if (isChecked) cls = cls.replace('taken', '') + ' selected';
-
       const title = isTaken
         ? `${seatId} — ${ticketInfo?.userName || 'Taken'} ${isChecked ? '(Checked In)' : '(Not checked in)'}`
         : `${seatId} — Available`;
-
       cells += `<button class="${cls}" title="${title}" disabled style="${isChecked ? 'background:var(--ok);border-color:var(--ok);color:#000;opacity:0.9' : ''}">${isChecked ? '✓' : isTaken ? '●' : col}</button>`;
     }
     return cells;
@@ -459,16 +708,15 @@ function viewSeatMap(eventId) {
     ${colHeaders}
     <div class="seat-grid">${gridHTML}</div>
     <div style="margin-top:16px;display:flex;gap:16px;font-size:13px;color:var(--t2)">
-      <span>Total seats: <strong style="color:var(--t1)">100</strong></span>
+      <span>Total: <strong style="color:var(--t1)">100</strong></span>
       <span>Sold: <strong style="color:var(--warn)">${takenSeats.size}</strong></span>
       <span>Checked in: <strong style="color:var(--ok)">${checkedIn.size}</strong></span>
       <span>Available: <strong style="color:var(--p2)">${100 - takenSeats.size}</strong></span>
     </div>`;
-
   openModal('seatmap-view-modal');
 }
 
-/* ── CREATE / EDIT EVENT ─────────────────────────────────── */
+/* ── CREATE / EDIT EVENT ── */
 function openCreateEvent() {
   document.getElementById('event-form-title').textContent = '✨ Create New Event';
   document.getElementById('edit-event-id').value = '';
@@ -508,53 +756,28 @@ function saveEvent() {
   const id    = document.getElementById('edit-event-id').value;
   const title = document.getElementById('ef-title').value.trim();
   if (!title) { toast('Event title is required', 'err'); return; }
-
   const selected = document.querySelector('.color-swatch.selected');
   const eventData = {
-    title,
-    emoji:    document.getElementById('ef-emoji').value || '🎉',
+    title, emoji: document.getElementById('ef-emoji').value || '🎉',
     category: document.getElementById('ef-category').value,
-    date:     document.getElementById('ef-date').value,
-    time:     document.getElementById('ef-time').value,
-    venue:    document.getElementById('ef-venue').value,
-    desc:     document.getElementById('ef-desc').value,
-    price:    parseInt(document.getElementById('ef-price').value)    || 0,
+    date: document.getElementById('ef-date').value,
+    time: document.getElementById('ef-time').value,
+    venue: document.getElementById('ef-venue').value,
+    desc: document.getElementById('ef-desc').value,
+    price: parseInt(document.getElementById('ef-price').value) || 0,
     vipPrice: parseInt(document.getElementById('ef-vip-price').value) || 0,
-    capacity: 100,
-    color:    selected ? selected.dataset.color : '#6c5ce7'
+    capacity: 100, color: selected ? selected.dataset.color : '#6c5ce7'
   };
-
   if (id) {
-  const idx = STORE.events.findIndex(e => e.id === id);
-  STORE.events[idx] = { ...STORE.events[idx], ...eventData };
-
-  // 🔔 NOTIFICATION (UPDATE)
-  saveNotification({
-    id: 'n' + Date.now(),
-    title: 'Event Updated',
-    message: `${eventData.title} has been updated`,
-    link: 'index.html', // where user will go
-    time: new Date().toISOString(),
-    read: false
-  });
-
-  toast('Event updated!', 'ok');
-
-} else {
-  STORE.events.push({ id: 'e' + Date.now(), sold: 0, ...eventData });
-
-  // 🔔 NOTIFICATION (NEW EVENT)
-  saveNotification({
-    id: 'n' + Date.now(),
-    title: 'New Event',
-    message: `${eventData.title} is now available`,
-    link: 'index.html',
-    time: new Date().toISOString(),
-    read: false
-  });
-
-  toast('Event created!', 'ok');
-}
+    const idx = STORE.events.findIndex(e => e.id === id);
+    STORE.events[idx] = { ...STORE.events[idx], ...eventData };
+    saveNotification({ id: 'n' + Date.now(), title: 'Event Updated', message: `${eventData.title} has been updated`, link: 'index.html', time: new Date().toISOString(), read: false });
+    toast('Event updated!', 'ok');
+  } else {
+    STORE.events.push({ id: 'e' + Date.now(), sold: 0, ...eventData });
+    saveNotification({ id: 'n' + Date.now(), title: 'New Event', message: `${eventData.title} is now available`, link: 'index.html', time: new Date().toISOString(), read: false });
+    toast('Event created!', 'ok');
+  }
   saveStore();
   closeModal('event-form-modal');
   renderAdminEvents();
@@ -562,460 +785,187 @@ function saveEvent() {
 
 function deleteEvent(id) {
   const event = STORE.events.find(e => e.id === id);
-
   if (!confirm('Delete this event? All associated tickets will also be removed.')) return;
-
   STORE.events  = STORE.events.filter(e => e.id !== id);
   STORE.tickets = STORE.tickets.filter(t => t.eventId !== id);
-
-  saveNotification({
-    message: `🗑 Event deleted: ${event?.title || 'Unknown Event'}`,
-    link: 'admin.html?page=admin-events',
-    time: new Date().toISOString(),
-    read: false
-  });
-
-  saveStore();
-  renderAdminEvents();
+  saveNotification({ message: `🗑 Event deleted: ${event?.title || 'Unknown Event'}`, link: 'admin.html?page=admin-events', time: new Date().toISOString(), read: false });
+  saveStore(); renderAdminEvents();
   toast('Event deleted', 'warn');
 }
 
-/* ═══════════════════════════════════════════════════
-   QR SCANNER
-   ═══════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   ATTENDEES — FULL REDESIGN
+══════════════════════════════════════════ */
 
-let scannerStream    = null;
-let scanAnimFrame    = null;
-let lastScanTime     = 0;
-let activeScannerTab = 'camera';
+function getFilteredTickets() {
+  const eventFilter  = document.getElementById('attendee-filter-event')?.value || 'all';
+  const searchVal    = (document.getElementById('att-search')?.value || '').toLowerCase();
 
-/* ── Tab switching ────────────────────────────────── */
-function resetScannerUI() {
-  document.getElementById('scan-result-area').innerHTML = '';
-  switchScannerTab('camera');
-}
-
-function switchScannerTab(tab) {
-  activeScannerTab = tab;
-  if (tab !== 'camera') stopScanner();
-  document.querySelectorAll('.scanner-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById(`tab-${tab}`).classList.add('active');
-  document.querySelectorAll('.scanner-tab-panel').forEach(p => p.style.display = 'none');
-  document.getElementById(`panel-${tab}`).style.display = 'block';
-  document.getElementById('scan-result-area').innerHTML = '';
-}
-
-/* ── CAMERA SCANNER ───────────────────────────────── */
-async function startScanner() {
-  try {
-    let stream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
-    } catch {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  return STORE.tickets.filter(t => {
+    const ev = STORE.events.find(e => e.id === t.eventId);
+    if (eventFilter !== 'all' && t.eventId !== eventFilter) return false;
+    if (attStatusFilter === 'used'    && t.status !== 'used')    return false;
+    if (attStatusFilter === 'pending' && t.status === 'used')    return false;
+    if (attStatusFilter === 'vip'     && t.type   !== 'vip')     return false;
+    if (attStatusFilter === 'general' && t.type   !== 'general') return false;
+    if (searchVal) {
+      const haystack = `${t.userName} ${t.userEmail} ${t.id} ${ev?.title || ''}`.toLowerCase();
+      if (!haystack.includes(searchVal)) return false;
     }
-
-    scannerStream = stream;
-    const video = document.getElementById('scanner-video');
-    video.srcObject = stream;
-
-    video.onloadedmetadata = () => {
-      video.play().catch(() => {});
-    };
-
-    document.getElementById('video-wrapper').style.display  = 'block';
-    document.getElementById('scan-start-btn').style.display = 'none';
-    document.getElementById('scan-stop-btn').style.display  = 'flex';
-    document.getElementById('scan-result-area').innerHTML   = '';
-
-    startDecodeLoop(video);
-
-  } catch(err) {
-    console.error('Camera error:', err);
-    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-      toast('Camera permission denied. Allow camera access in browser settings, or use Upload/Manual tab.', 'err');
-    } else if (err.name === 'NotFoundError') {
-      toast('No camera found on this device. Use the Upload or Manual tab instead.', 'err');
-    } else {
-      toast('Could not start camera: ' + err.message, 'err');
-    }
-  }
-}
-
-function startDecodeLoop(video) {
-  const canvas = document.getElementById('scanner-canvas');
-  const ctx    = canvas.getContext('2d', { willReadFrequently: true });
-
-  function tick() {
-    if (video.readyState >= video.HAVE_ENOUGH_DATA && video.videoWidth > 0 && video.videoHeight > 0) {
-      canvas.width  = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'attemptBoth'   // FIX: try both normal and inverted
-      });
-
-      if (code && code.data) {
-        const now = Date.now();
-        if (now - lastScanTime > 3000) {
-          lastScanTime = now;
-          processQR(code.data);
-        }
-      }
-    }
-
-    if (scannerStream && scannerStream.active) {
-      scanAnimFrame = requestAnimationFrame(tick);
-    }
-  }
-
-  scanAnimFrame = requestAnimationFrame(tick);
-}
-
-function stopScanner() {
-  if (scanAnimFrame) { cancelAnimationFrame(scanAnimFrame); scanAnimFrame = null; }
-  if (scannerStream) { scannerStream.getTracks().forEach(t => t.stop()); scannerStream = null; }
-
-  const vw = document.getElementById('video-wrapper');
-  const sb = document.getElementById('scan-start-btn');
-  const ss = document.getElementById('scan-stop-btn');
-  if (vw) vw.style.display = 'none';
-  if (sb) sb.style.display = 'flex';
-  if (ss) ss.style.display = 'none';
-}
-
-/* ── QR IMAGE UPLOAD ──────────────────────────────── */
-function handleDragOver(e) {
-  e.preventDefault();
-  document.getElementById('upload-drop-zone').classList.add('drag-over');
-}
-
-function handleDragLeave(e) {
-  document.getElementById('upload-drop-zone').classList.remove('drag-over');
-}
-
-function handleFileDrop(e) {
-  e.preventDefault();
-  document.getElementById('upload-drop-zone').classList.remove('drag-over');
-  const file = e.dataTransfer?.files?.[0];
-  if (file && file.type.startsWith('image/')) {
-    processUploadedImage(file);
-  } else {
-    toast('Please drop an image file (PNG, JPG, etc.)', 'err');
-  }
-}
-
-function handleFileUpload(e) {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  processUploadedImage(file);
-  e.target.value = '';
-}
-
-function processUploadedImage(file) {
-  // FIX: Show spinner FIRST, then decode asynchronously so UI doesn't freeze
-  document.getElementById('scan-result-area').innerHTML = `
-    <div style="padding:16px;text-align:center;color:var(--t2);font-size:14px">
-      <div style="font-size:24px;margin-bottom:8px;animation:spin 1s linear infinite;display:inline-block">⏳</div>
-      <div>Scanning QR code…</div>
-    </div>`;
-
-  const reader = new FileReader();
-
-  reader.onload = function(ev) {
-    const img = new Image();
-    img.onload = function() {
-      // Show preview
-      const previewImg = document.getElementById('upload-preview-img');
-      previewImg.src = ev.target.result;
-      document.getElementById('upload-preview-area').style.display = 'block';
-      document.getElementById('upload-drop-zone').style.display = 'none';
-
-      // FIX: Use setTimeout to let the browser render the spinner before heavy decoding
-      setTimeout(() => decodeQRFromImage(img), 50);
-    };
-    img.onerror = function() {
-      toast('Could not load image file', 'err');
-      resetUploadUI();
-    };
-    img.src = ev.target.result;
-  };
-
-  reader.onerror = function() {
-    toast('Could not read file', 'err');
-    resetUploadUI();
-  };
-
-  reader.readAsDataURL(file);
-}
-
-function decodeQRFromImage(img) {
-  const canvas = document.getElementById('upload-canvas');
-  const ctx    = canvas.getContext('2d', { willReadFrequently: true });
-
-  // Try multiple scales and inversion modes for best detection
-  const scales = [1, 1.5, 0.75, 2, 0.5];
-  const inversionModes = ['attemptBoth', 'dontInvert', 'onlyInvert'];
-  let found = false;
-
-  outer:
-  for (const scale of scales) {
-    canvas.width  = Math.round(img.naturalWidth  * scale);
-    canvas.height = Math.round(img.naturalHeight * scale);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-    for (const inv of inversionModes) {
-      const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: inv });
-      if (code && code.data) {
-        found = true;
-        processQR(code.data);
-        break outer;
-      }
-    }
-  }
-
-  if (!found) {
-    document.getElementById('scan-result-area').innerHTML = `
-      <div class="scan-result invalid">
-        <span class="scan-result-icon">❌</span>
-        <div class="scan-result-name">No QR Code Detected</div>
-        <div class="scan-result-detail">Could not find a valid QR code in this image. Make sure the image is clear, well-lit, and contains a QR code.</div>
-      </div>`;
-    toast('No QR code found in image', 'err');
-
-    setTimeout(() => resetUploadUI(), 2500);
-  }
-}
-
-function resetUploadUI() {
-  document.getElementById('upload-drop-zone').style.display = 'block';
-  document.getElementById('upload-preview-area').style.display = 'none';
-}
-
-/* ── SHARED QR PROCESSING ─────────────────────────── */
-/*
- * FIX: QR codes from your ticket generator encode {"id":"TICKET-XXXXX"} 
- * but the old code only checked for parsed.ticketId — which never matched.
- * Now we check both parsed.id AND parsed.ticketId so both formats work.
- */
-function processQR(data) {
-  console.log('[QR] Raw data received:', data);
-
-  let ticketId = null;
-
-  // Try to parse as JSON first
-  try {
-    const parsed = JSON.parse(data);
-    // Support both {"id": "..."} and {"ticketId": "..."} formats
-    ticketId = parsed.id || parsed.ticketId || null;
-  } catch(e) {
-    // Not JSON — treat the raw string as a plain ticket ID
-    ticketId = data.trim().toUpperCase();
-  }
-
-  if (!ticketId) {
-    showScanResult('invalid', null);
-    return;
-  }
-
-  // Normalize to uppercase for safe matching
-  ticketId = ticketId.trim().toUpperCase();
-
-  const ticket = STORE.tickets.find(t => t.id === ticketId);
-  if (!ticket) {
-    console.warn('[QR] No ticket found for ID:', ticketId);
-    showScanResult('invalid', null);
-    return;
-  }
-
-  const event = STORE.events.find(e => e.id === ticket.eventId);
-
-  if (ticket.status === 'used') {
-    showScanResult('used', ticket, event);
-    return;
-  }
-
-  ticket.status      = 'used';
-  ticket.checkInTime = new Date().toISOString();
-  saveStore();
-  showScanResult('valid', ticket, event);
-  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-}
-
-function showScanResult(status, ticket, event) {
-  const area = document.getElementById('scan-result-area');
-  const cfgs = {
-    valid:   { cls: 'valid',   icon: '✅', title: 'Check-In Successful!',
-                detail: ticket ? `${ticket.userName} · ${event?.title || 'Unknown Event'} · Seat ${ticket.seat} · ${ticket.type === 'vip' ? '⭐ VIP' : 'General'}` : '' },
-    used:    { cls: 'used',    icon: '✅', title: 'Already Checked In',
-                detail: ticket ? `${ticket.userName} · Seat ${ticket.seat} · checked in at ${ticket.checkInTime ? new Date(ticket.checkInTime).toLocaleTimeString() : 'earlier'}` : '' },
-    invalid: { cls: 'invalid', icon: '❌', title: 'Invalid Ticket',
-                detail: 'This QR code is not recognized in our system.' }
-  };
-  const c = cfgs[status];
-  area.innerHTML = `
-    <div class="scan-result ${c.cls}">
-      <span class="scan-result-icon">${c.icon}</span>
-      <div class="scan-result-name">${c.title}</div>
-      <div class="scan-result-detail">${c.detail}</div>
-    </div>`;
-  toast(c.title, status === 'valid' ? 'ok' : status === 'used' ? 'warn' : 'err');
-
-  // After upload scan, restore drop zone after a delay
-  if (activeScannerTab === 'upload') {
-    setTimeout(() => resetUploadUI(), 3000);
-  }
-}
-
-function manualCheckIn() {
-  const id     = document.getElementById('manual-ticket-id').value.trim().toUpperCase();
-  if (!id) { toast('Please enter a ticket ID', 'err'); return; }
-  const ticket = STORE.tickets.find(t => t.id === id);
-  if (!ticket) { showScanResult('invalid', null); return; }
-  const event  = STORE.events.find(e => e.id === ticket.eventId);
-  if (ticket.status === 'used') { showScanResult('used', ticket, event); return; }
-  ticket.status      = 'used';
-  ticket.checkInTime = new Date().toISOString();
-  saveStore();
-  showScanResult('valid', ticket, event);
-  document.getElementById('manual-ticket-id').value = '';
-}
-
-/* ── ANALYTICS ──────────────────────────────────────────── */
-let charts = {};
-
-function renderAnalytics() {
-  const totalRevenue = STORE.tickets.reduce((sum, t) => {
-    const e = STORE.events.find(ev => ev.id === t.eventId);
-    return e ? sum + (t.type === 'vip' ? e.vipPrice : e.price) : sum;
-  }, 0);
-  const totalTickets  = STORE.tickets.length;
-  const checkedIn     = STORE.tickets.filter(t => t.status === 'used').length;
-
-  document.getElementById('analytics-stats').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-top"><div class="stat-icon purple">💰</div><span class="stat-change up">Revenue</span></div>
-      <div class="stat-value">₱${totalRevenue.toLocaleString()}</div>
-      <div class="stat-label">Total Revenue</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-top"><div class="stat-icon blue">🎫</div><span class="stat-change up">+${totalTickets}</span></div>
-      <div class="stat-value">${totalTickets}</div>
-      <div class="stat-label">Tickets Sold</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-top"><div class="stat-icon teal">✅</div><span class="stat-change up">${checkedIn}</span></div>
-      <div class="stat-value">${checkedIn}</div>
-      <div class="stat-label">Checked In</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-top"><div class="stat-icon amber">📅</div><span class="stat-change up">${STORE.events.length}</span></div>
-      <div class="stat-value">${STORE.events.length}</div>
-      <div class="stat-label">Total Events</div>
-    </div>`;
-
-  buildCharts();
-}
-
-function buildCharts() {
-  if (!document.getElementById('sales-chart')) return;
-  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
-  charts = {};
-
-  const days = [], salesData = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    days.push(d.toLocaleDateString('en', { month: 'short', day: 'numeric' }));
-    salesData.push(0);
-  }
-  STORE.tickets.forEach(t => {
-    const d     = new Date(t.purchaseDate);
-    const label = d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
-    const idx   = days.indexOf(label);
-    if (idx >= 0) salesData[idx]++;
-  });
-
-  charts.sales = new Chart(document.getElementById('sales-chart'), {
-    type: 'line',
-    data: {
-      labels: days,
-      datasets: [{ label: 'Tickets Sold', data: salesData, fill: true,
-        borderColor: 'rgb(108,92,231)', backgroundColor: 'rgba(108,92,231,0.08)',
-        borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.4 }]
-    },
-    options: {
-      responsive: true, interaction: { intersect: false, mode: 'index' },
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { color: 'rgba(108,92,231,0.07)' }, ticks: { color: '#9490c4', maxTicksLimit: 8, font: { size: 11 } } },
-        y: { grid: { color: 'rgba(108,92,231,0.07)' }, ticks: { color: '#9490c4', font: { size: 11 } }, beginAtZero: true }
-      }
-    }
-  });
-
-  const cats = {};
-  STORE.events.forEach(e => { cats[e.category] = (cats[e.category] || 0) + getTakenSeats(e.id).size; });
-  charts.cat = new Chart(document.getElementById('category-chart'), {
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(cats),
-      datasets: [{
-        data: Object.values(cats),
-        backgroundColor: ['rgba(108,92,231,0.8)','rgba(9,132,227,0.8)','rgba(0,206,201,0.8)','rgba(253,203,110,0.8)','rgba(225,112,85,0.8)','rgba(253,121,168,0.8)'],
-        borderColor: '#0d0d1a', borderWidth: 3
-      }]
-    },
-    options: {
-      responsive: true, cutout: '65%',
-      plugins: { legend: { position: 'bottom', labels: { color: '#9490c4', padding: 16, font: { size: 12 } } } }
-    }
-  });
-
-  const evNames  = STORE.events.slice(0, 6).map(e => e.title.substring(0, 16) + '…');
-  const evSold   = STORE.events.slice(0, 6).map(e => getTakenSeats(e.id).size);
-  const evChkIn  = STORE.events.slice(0, 6).map(e =>
-    STORE.tickets.filter(t => t.eventId === e.id && t.status === 'used').length);
-
-  charts.checkin = new Chart(document.getElementById('checkin-chart'), {
-    type: 'bar',
-    data: {
-      labels: evNames,
-      datasets: [
-        { label: 'Seats Sold', data: evSold,  backgroundColor: 'rgba(108,92,231,0.6)', borderRadius: 6, borderSkipped: false },
-        { label: 'Checked In', data: evChkIn, backgroundColor: 'rgba(0,206,201,0.6)',  borderRadius: 6, borderSkipped: false }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { labels: { color: '#9490c4', font: { size: 12 } } } },
-      scales: {
-        x: { grid: { display: false }, ticks: { color: '#9490c4', font: { size: 10 } } },
-        y: { grid: { color: 'rgba(108,92,231,0.07)' }, ticks: { color: '#9490c4', font: { size: 11 } }, beginAtZero: true }
-      }
-    }
+    return true;
   });
 }
 
-/* ── ATTENDEES ──────────────────────────────────────────── */
 function renderAttendees() {
+  // Populate event dropdown
   const sel = document.getElementById('attendee-filter-event');
+  const curVal = sel.value;
   sel.innerHTML = '<option value="all">All Events</option>' +
-    STORE.events.map(e => `<option value="${e.id}">${e.title}</option>`).join('');
+    STORE.events.map(e => `<option value="${e.id}">${e.emoji} ${e.title}</option>`).join('');
+  if (curVal) sel.value = curVal;
 
-  const filterVal = sel.value;
-  const tickets   = filterVal === 'all'
-    ? STORE.tickets
-    : STORE.tickets.filter(t => t.eventId === filterVal);
+  // Stats strip
+  renderAttendeeStats();
 
+  const tickets = getFilteredTickets();
+
+  if (attView === 'grid') {
+    renderAttendeesGrid(tickets);
+  } else {
+    renderAttendeesTable(tickets);
+  }
+}
+
+function renderAttendeeStats() {
+  const total     = STORE.tickets.length;
+  const checkedIn = STORE.tickets.filter(t => t.status === 'used').length;
+  const vips      = STORE.tickets.filter(t => t.type   === 'vip').length;
+  const pct       = total ? Math.round((checkedIn / total) * 100) : 0;
+
+  document.getElementById('att-stats-strip').innerHTML = `
+    <div class="attendee-stat">
+      <div class="attendee-stat-icon">🎫</div>
+      <div><div class="attendee-stat-val">${total}</div><div class="attendee-stat-lbl">Total Tickets</div></div>
+    </div>
+    <div class="attendee-stat">
+      <div class="attendee-stat-icon">✅</div>
+      <div><div class="attendee-stat-val">${checkedIn}</div><div class="attendee-stat-lbl">Checked In</div></div>
+    </div>
+    <div class="attendee-stat">
+      <div class="attendee-stat-icon">⏳</div>
+      <div><div class="attendee-stat-val">${total - checkedIn}</div><div class="attendee-stat-lbl">Awaiting Entry</div></div>
+    </div>
+    <div class="attendee-stat">
+      <div class="attendee-stat-icon">⭐</div>
+      <div><div class="attendee-stat-val">${vips}</div><div class="attendee-stat-lbl">VIP Holders</div></div>
+    </div>`;
+}
+
+/* ── GRID VIEW ── */
+function renderAttendeesGrid(tickets) {
+  const grid = document.getElementById('attendees-grid-view');
+  grid.style.display = attView === 'grid' ? 'grid' : 'none';
+  if (!tickets.length) {
+    grid.innerHTML = `<div class="attendee-empty">
+      <div class="attendee-empty-icon">👥</div>
+      <div class="attendee-empty-title">No attendees found</div>
+      <div class="attendee-empty-sub">Try adjusting your search or filters</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = tickets.map(t => {
+    const ev      = STORE.events.find(e => e.id === t.eventId) || { title: 'Unknown', emoji: '🎫', color: '#6366f1' };
+    const isVIP   = t.type === 'vip';
+    const isUsed  = t.status === 'used';
+    const seat    = t.seat || '—';
+    const seatRow = seat.charAt(0);
+    const seatCol = seat.slice(1);
+    const isVIPSeat = VIP_ROWS && VIP_ROWS.includes(seatRow);
+
+    // Build mini seat map
+    const takenSeats = getTakenSeats(t.eventId);
+    const miniMap = buildMiniSeatMap(takenSeats, seat, isVIPSeat);
+
+    return `
+    <div class="attendee-card">
+      <div class="attendee-card-accent ${isUsed ? 'used' : isVIP ? 'vip' : ''}"></div>
+      <div class="attendee-card-body">
+        <!-- Top row -->
+        <div class="attendee-top">
+          <div class="attendee-avatar ${isVIP ? 'vip' : ''}">${t.userName.charAt(0).toUpperCase()}</div>
+          <div style="flex:1;min-width:0">
+            <div class="attendee-name">${t.userName}</div>
+            <div class="attendee-email">${t.userEmail}</div>
+            <div class="attendee-badges">
+              <span class="tag ${isVIP ? 'tag-warn' : 'tag-purple'}">${isVIP ? '⭐ VIP' : 'General'}</span>
+              <span class="tag ${isUsed ? 'tag-teal' : 'tag-warn'}">${isUsed ? '✓ In' : '⏳ Pending'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seat spotlight -->
+        <div class="seat-spotlight">
+          <div class="seat-spotlight-number ${isVIPSeat ? 'vip' : ''}">${seat}</div>
+          <div class="seat-spotlight-info">
+            <div class="seat-spotlight-label">Assigned Seat</div>
+            <div class="seat-spotlight-event">${ev.emoji} ${ev.title}</div>
+            <div class="seat-spotlight-row">Row ${seatRow} · Column ${seatCol} · ${isVIPSeat ? '⭐ VIP Section' : 'General Section'}</div>
+          </div>
+        </div>
+
+        <!-- Mini seat map -->
+        <div class="mini-seatmap-wrap">
+          <div class="mini-seatmap-title">📍 Seat Location</div>
+          ${miniMap}
+        </div>
+
+        <!-- Ticket ID -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <button class="ticket-id-btn" onclick="copyTicketId('${t.id}',this)" title="Click to copy">
+            📋 ${t.id}
+          </button>
+          <span style="font-size:11px;color:var(--t3)">${new Date(t.purchaseDate).toLocaleDateString()}</span>
+        </div>
+      </div>
+
+      <!-- Card footer -->
+      <div class="attendee-card-footer">
+        <button class="btn btn-ghost" onclick="openAttendeeDetail('${t.id}')">👁 Details</button>
+        ${t.status !== 'used'
+          ? `<button class="btn btn-success" onclick="manualCheckInById('${t.id}')">✓ Check In</button>`
+          : `<button class="btn btn-warn" onclick="undoCheckIn('${t.id}')">↩ Undo</button>`}
+        <button class="btn btn-danger" onclick="revokeTicket('${t.id}')">🗑 Revoke</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildMiniSeatMap(takenSeats, highlightSeat, isHighlightVIP) {
+  const rows = ROWS;
+  let html = `<div class="mini-seat-grid">`;
+  rows.forEach(row => {
+    html += `<div class="mini-seat-row-label">${row}</div>`;
+    for (let col = 1; col <= 10; col++) {
+      const seatId  = getSeatId(row, col);
+      const isVIPR  = VIP_ROWS && VIP_ROWS.includes(row);
+      const isTaken = takenSeats.has(seatId);
+      const isHL    = seatId === highlightSeat;
+      let cls = 'mini-seat';
+      if (isHL)    cls += ' highlight' + (isHighlightVIP ? ' vip' : '');
+      else if (isTaken) cls += ' taken';
+      html += `<div class="${cls}" title="${seatId}"></div>`;
+    }
+  });
+  html += `</div>`;
+  // Stage label
+  html = `<div style="text-align:center;font-size:9px;letter-spacing:2px;color:var(--t3);margin-bottom:5px;border-bottom:1px solid var(--border);padding-bottom:4px">🎭 STAGE</div>` + html;
+  return html;
+}
+
+/* ── TABLE VIEW ── */
+function renderAttendeesTable(tickets) {
+  document.getElementById('attendees-table-view').style.display = attView === 'table' ? 'block' : 'none';
   const tbody = document.getElementById('attendees-tbody');
   if (!tickets.length) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--t3)">No attendees found</td></tr>`;
@@ -1023,10 +973,11 @@ function renderAttendees() {
   }
   tbody.innerHTML = tickets.map(t => {
     const ev = STORE.events.find(e => e.id === t.eventId) || { title: 'Unknown', emoji: '🎫' };
+    const isVIPSeat = VIP_ROWS && VIP_ROWS.includes(t.seat?.charAt(0));
     return `<tr>
       <td>
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:32px;height:32px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">
+          <div style="width:34px;height:34px;border-radius:10px;background:${t.type==='vip'?'linear-gradient(135deg,#f59e0b,#fbbf24)':'var(--grad)'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;color:${t.type==='vip'?'#000':'#fff'}">
             ${t.userName.charAt(0).toUpperCase()}
           </div>
           <div>
@@ -1035,10 +986,17 @@ function renderAttendees() {
           </div>
         </div>
       </td>
-      <td><span style="font-size:16px">${ev.emoji}</span> <span style="font-size:12px">${ev.title?.substring(0, 22)}…</span></td>
+      <td><span style="font-size:15px">${ev.emoji}</span> <span style="font-size:12px">${ev.title?.substring(0,22)}…</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:32px;height:32px;border-radius:8px;background:${isVIPSeat?'rgba(245,158,11,.15)':'rgba(99,102,241,.15)'};border:1.5px solid ${isVIPSeat?'rgba(245,158,11,.4)':'rgba(99,102,241,.35)'};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${isVIPSeat?'var(--warn)':'var(--p2)'}">
+            ${t.seat}
+          </div>
+          <div style="font-size:10px;color:var(--t3)">Row ${t.seat?.charAt(0)}<br>Col ${t.seat?.slice(1)}</div>
+        </div>
+      </td>
       <td><span class="tag ${t.type === 'vip' ? 'tag-warn' : 'tag-purple'}">${t.type === 'vip' ? '⭐ VIP' : 'General'}</span></td>
-      <td><strong style="font-size:15px;color:var(--p2)">${t.seat}</strong></td>
-      <td><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3)">${t.id}</span></td>
+      <td><button class="ticket-id-btn" onclick="copyTicketId('${t.id}',this)">📋 ${t.id}</button></td>
       <td style="font-size:12px;color:var(--t2)">${new Date(t.purchaseDate).toLocaleDateString()}</td>
       <td>
         <span class="tag ${t.status === 'used' ? 'tag-teal' : 'tag-warn'}">
@@ -1050,20 +1008,185 @@ function renderAttendees() {
       </td>
       <td>
         <div class="table-actions">
+          <button class="btn btn-sm btn-ghost" onclick="openAttendeeDetail('${t.id}')">👁</button>
           ${t.status !== 'used'
             ? `<button class="btn btn-sm btn-success" onclick="manualCheckInById('${t.id}')">✓ Check In</button>`
-            : ''}
-          <button class="btn btn-sm btn-danger" onclick="revokeTicket('${t.id}')">Revoke</button>
+            : `<button class="btn btn-sm btn-warn" onclick="undoCheckIn('${t.id}')">↩ Undo</button>`}
+          <button class="btn btn-sm btn-danger" onclick="revokeTicket('${t.id}')">🗑</button>
         </div>
       </td>
     </tr>`;
   }).join('');
 }
 
+/* ── ATTENDEE DETAIL MODAL ── */
+function openAttendeeDetail(ticketId) {
+  const t  = STORE.tickets.find(tk => tk.id === ticketId);
+  if (!t) return;
+  const ev = STORE.events.find(e => e.id === t.eventId) || { title: 'Unknown', emoji: '🎫', color: '#6366f1', venue: '' };
+  const isVIP     = t.type === 'vip';
+  const isUsed    = t.status === 'used';
+  const seatRow   = t.seat?.charAt(0);
+  const seatCol   = t.seat?.slice(1);
+  const isVIPSeat = VIP_ROWS && VIP_ROWS.includes(seatRow);
+  const takenSeats = getTakenSeats(t.eventId);
+  const checkedInSeats = new Set(STORE.tickets.filter(tk => tk.eventId === t.eventId && tk.status === 'used').map(tk => tk.seat));
+
+  // Full seat map with highlight
+  const fullMap = buildFullSeatMapForAttendee(takenSeats, checkedInSeats, t.seat, isVIPSeat);
+
+  document.getElementById('attendee-detail-body').innerHTML = `
+    <!-- Hero -->
+    <div class="att-detail-hero">
+      <div class="att-detail-avatar ${isVIP ? 'vip' : ''}">${t.userName.charAt(0).toUpperCase()}</div>
+      <div>
+        <div class="att-detail-info-name">${t.userName}</div>
+        <div class="att-detail-info-email">${t.userEmail}</div>
+        <div class="att-detail-info-meta">
+          <span class="tag ${isVIP ? 'tag-warn' : 'tag-purple'}">${isVIP ? '⭐ VIP Pass' : 'General Admission'}</span>
+          <span class="tag ${isUsed ? 'tag-teal' : 'tag-warn'}">${isUsed ? '✓ Checked In' : '⏳ Not Checked In'}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info grid -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid var(--border)">
+      <div style="padding:18px 24px;border-right:1px solid var(--border)">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);font-weight:700;margin-bottom:10px">Ticket Info</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Event</span><span style="font-weight:600">${ev.emoji} ${ev.title?.substring(0,24)}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Venue</span><span style="font-weight:600;font-size:11px">${ev.venue?.split(',')[0]}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Purchased</span><span style="font-weight:600">${new Date(t.purchaseDate).toLocaleDateString()}</span></div>
+          ${isUsed && t.checkInTime ? `<div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Checked In</span><span style="font-weight:600;color:var(--ok)">${new Date(t.checkInTime).toLocaleTimeString()}</span></div>` : ''}
+        </div>
+      </div>
+      <div style="padding:18px 24px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);font-weight:700;margin-bottom:10px">Seat Details</div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:56px;height:56px;border-radius:14px;background:${isVIPSeat?'rgba(245,158,11,.15)':'rgba(99,102,241,.15)'};border:2px solid ${isVIPSeat?'rgba(245,158,11,.5)':'rgba(99,102,241,.4)'};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;font-family:'JetBrains Mono',monospace;color:${isVIPSeat?'var(--warn)':'var(--p2)'}">
+            ${t.seat}
+          </div>
+          <div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:3px">Seat ${t.seat}</div>
+            <div style="font-size:12px;color:var(--t2)">Row ${seatRow} · Column ${seatCol}</div>
+            <div style="font-size:11px;color:${isVIPSeat?'var(--warn)':'var(--t3)'};margin-top:3px">${isVIPSeat ? '⭐ VIP Front Section' : 'General Seating Area'}</div>
+          </div>
+        </div>
+        <button class="ticket-id-btn" onclick="copyTicketId('${t.id}',this)" style="margin-top:12px">📋 ${t.id}</button>
+      </div>
+    </div>
+
+    <!-- Full seat map -->
+    <div class="att-full-seatmap">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);font-weight:700;margin-bottom:12px">📍 Seat Map — ${ev.emoji} ${ev.title}</div>
+      <div class="seat-legend" style="margin-bottom:14px">
+        <div class="seat-legend-item"><div class="seat-legend-dot" style="background:var(--p1);box-shadow:0 0 8px rgba(99,102,241,.6)"></div> This Seat</div>
+        <div class="seat-legend-item"><div class="seat-legend-dot" style="background:rgba(239,68,68,.3);border:1px solid rgba(239,68,68,.3)"></div> Sold</div>
+        <div class="seat-legend-item"><div class="seat-legend-dot" style="background:var(--ok)"></div> Checked In</div>
+        <div class="seat-legend-item"><div class="seat-legend-dot" style="background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.3)"></div> VIP Row</div>
+        <div class="seat-legend-item"><div class="seat-legend-dot" style="background:var(--bg3);border:1px solid var(--border)"></div> Available</div>
+      </div>
+      <div class="seat-map-stage">🎭 STAGE / SCREEN</div>
+      <div class="seat-number-cols">
+        <div class="seat-col-label"></div>
+        ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<div class="seat-col-label">${n}</div>`).join('')}
+      </div>
+      <div class="seat-grid">${fullMap}</div>
+    </div>`;
+
+  document.getElementById('attendee-detail-footer').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal('attendee-detail-modal')">Close</button>
+    ${t.status !== 'used'
+      ? `<button class="btn btn-success" onclick="manualCheckInById('${t.id}');closeModal('attendee-detail-modal')">✓ Check In Attendee</button>`
+      : `<button class="btn btn-warn" onclick="undoCheckIn('${t.id}');closeModal('attendee-detail-modal')">↩ Undo Check-In</button>`}
+    <button class="btn btn-danger" onclick="if(confirm('Revoke this ticket?')){revokeTicket('${t.id}');closeModal('attendee-detail-modal')}">🗑 Revoke Ticket</button>`;
+
+  openModal('attendee-detail-modal');
+}
+
+function buildFullSeatMapForAttendee(takenSeats, checkedInSeats, highlightSeat, isHighlightVIP) {
+  return ROWS.map(row => {
+    const isVIPRow = VIP_ROWS && VIP_ROWS.includes(row);
+    let cells = `<div class="seat-row-label">${row}</div>`;
+    for (let col = 1; col <= 10; col++) {
+      const seatId    = getSeatId(row, col);
+      const isTaken   = takenSeats.has(seatId);
+      const isChecked = checkedInSeats.has(seatId);
+      const isHL      = seatId === highlightSeat;
+
+      let cls = 'seat-btn';
+      if (isVIPRow) cls += ' vip';
+
+      let style = '';
+      let label = col;
+
+      if (isHL) {
+        cls += ' selected';
+        style = isHighlightVIP
+          ? 'background:var(--warn);border-color:#fcd34d;color:#000;box-shadow:0 0 12px rgba(245,158,11,.7);transform:scale(1.15);z-index:1'
+          : 'background:var(--p1);border-color:var(--p2);color:#fff;box-shadow:0 0 12px rgba(99,102,241,.7);transform:scale(1.15);z-index:1';
+        label = '★';
+      } else if (isChecked) {
+        style = 'background:var(--ok);border-color:var(--ok);color:#000;opacity:.85';
+        label = '✓';
+      } else if (isTaken) {
+        cls += ' taken';
+        label = '●';
+      }
+
+      cells += `<button class="${cls}" disabled style="${style}" title="${seatId}${isHL?' (This Seat)':''}">${label}</button>`;
+    }
+    return cells;
+  }).join('');
+}
+
+/* ── HELPER ACTIONS ── */
+function copyTicketId(id, btn) {
+  navigator.clipboard.writeText(id).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✅ Copied!';
+    btn.style.color = 'var(--ok)';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 1500);
+  }).catch(() => toast('Copy failed', 'err'));
+}
+
+function undoCheckIn(id) {
+  const t = STORE.tickets.find(tk => tk.id === id);
+  if (!t) return;
+  t.status = 'valid';
+  delete t.checkInTime;
+  saveStore();
+  renderAttendees();
+  toast('Check-in undone', 'warn');
+}
+
+function exportAttendees() {
+  const tickets = getFilteredTickets();
+  if (!tickets.length) { toast('No attendees to export', 'err'); return; }
+  const rows = [
+    ['Name','Email','Event','Seat','Type','Ticket ID','Purchase Date','Status','Check-In Time'],
+    ...tickets.map(t => {
+      const ev = STORE.events.find(e => e.id === t.eventId);
+      return [
+        t.userName, t.userEmail, ev?.title || 'Unknown', t.seat, t.type,
+        t.id, new Date(t.purchaseDate).toLocaleDateString(),
+        t.status, t.checkInTime ? new Date(t.checkInTime).toLocaleString() : ''
+      ];
+    })
+  ];
+  const csv  = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'attendees.csv'; a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV exported!', 'ok');
+}
+
 function manualCheckInById(id) {
   const ticket = STORE.tickets.find(t => t.id === id);
   if (!ticket) return;
-  ticket.status      = 'used';
+  ticket.status = 'used';
   ticket.checkInTime = new Date().toISOString();
   saveStore();
   renderAttendees();
@@ -1078,10 +1201,229 @@ function revokeTicket(id) {
   toast('Ticket revoked', 'warn');
 }
 
-function getNotifications() {
-  return JSON.parse(localStorage.getItem('notifications') || '[]');
+/* ══════════════════════════════════════════
+   QR SCANNER
+══════════════════════════════════════════ */
+let scannerStream = null, scanAnimFrame = null, lastScanTime = 0, activeScannerTab = 'camera';
+
+function resetScannerUI() {
+  document.getElementById('scan-result-area').innerHTML = '';
+  switchScannerTab('camera');
+}
+function switchScannerTab(tab) {
+  activeScannerTab = tab;
+  if (tab !== 'camera') stopScanner();
+  document.querySelectorAll('.scanner-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.querySelectorAll('.scanner-tab-panel').forEach(p => p.style.display = 'none');
+  document.getElementById(`panel-${tab}`).style.display = 'block';
+  document.getElementById('scan-result-area').innerHTML = '';
+}
+async function startScanner() {
+  try {
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } }); }
+    catch { stream = await navigator.mediaDevices.getUserMedia({ video: true }); }
+    scannerStream = stream;
+    const video = document.getElementById('scanner-video');
+    video.srcObject = stream;
+    video.onloadedmetadata = () => video.play().catch(() => {});
+    document.getElementById('video-wrapper').style.display  = 'block';
+    document.getElementById('scan-start-btn').style.display = 'none';
+    document.getElementById('scan-stop-btn').style.display  = 'flex';
+    document.getElementById('scan-result-area').innerHTML   = '';
+    startDecodeLoop(video);
+  } catch(err) {
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')
+      toast('Camera permission denied. Use Upload/Manual tab.', 'err');
+    else if (err.name === 'NotFoundError')
+      toast('No camera found. Use Upload or Manual tab.', 'err');
+    else toast('Could not start camera: ' + err.message, 'err');
+  }
+}
+function startDecodeLoop(video) {
+  const canvas = document.getElementById('scanner-canvas');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  function tick() {
+    if (video.readyState >= video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+      if (code && code.data) {
+        const now = Date.now();
+        if (now - lastScanTime > 3000) { lastScanTime = now; processQR(code.data); }
+      }
+    }
+    if (scannerStream && scannerStream.active) scanAnimFrame = requestAnimationFrame(tick);
+  }
+  scanAnimFrame = requestAnimationFrame(tick);
+}
+function stopScanner() {
+  if (scanAnimFrame) { cancelAnimationFrame(scanAnimFrame); scanAnimFrame = null; }
+  if (scannerStream) { scannerStream.getTracks().forEach(t => t.stop()); scannerStream = null; }
+  const vw = document.getElementById('video-wrapper');
+  const sb = document.getElementById('scan-start-btn');
+  const ss = document.getElementById('scan-stop-btn');
+  if (vw) vw.style.display = 'none';
+  if (sb) sb.style.display = 'flex';
+  if (ss) ss.style.display = 'none';
+}
+function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-drop-zone').classList.add('drag-over'); }
+function handleDragLeave(e) { document.getElementById('upload-drop-zone').classList.remove('drag-over'); }
+function handleFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer?.files?.[0];
+  if (file && file.type.startsWith('image/')) processUploadedImage(file);
+  else toast('Please drop an image file', 'err');
+}
+function handleFileUpload(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  processUploadedImage(file);
+  e.target.value = '';
+}
+function processUploadedImage(file) {
+  document.getElementById('scan-result-area').innerHTML = `<div style="padding:16px;text-align:center;color:var(--t2);font-size:14px"><div style="font-size:24px;margin-bottom:8px;animation:spin 1s linear infinite;display:inline-block">⏳</div><div>Scanning QR code…</div></div>`;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const img = new Image();
+    img.onload = function() {
+      document.getElementById('upload-preview-img').src = ev.target.result;
+      document.getElementById('upload-preview-area').style.display = 'block';
+      document.getElementById('upload-drop-zone').style.display = 'none';
+      setTimeout(() => decodeQRFromImage(img), 50);
+    };
+    img.onerror = function() { toast('Could not load image file', 'err'); resetUploadUI(); };
+    img.src = ev.target.result;
+  };
+  reader.onerror = function() { toast('Could not read file', 'err'); resetUploadUI(); };
+  reader.readAsDataURL(file);
+}
+function decodeQRFromImage(img) {
+  const canvas = document.getElementById('upload-canvas');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const scales = [1, 1.5, 0.75, 2, 0.5];
+  const inversionModes = ['attemptBoth', 'dontInvert', 'onlyInvert'];
+  let found = false;
+  outer: for (const scale of scales) {
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    for (const inv of inversionModes) {
+      const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: inv });
+      if (code && code.data) { found = true; processQR(code.data); break outer; }
+    }
+  }
+  if (!found) {
+    document.getElementById('scan-result-area').innerHTML = `<div class="scan-result invalid"><span class="scan-result-icon">❌</span><div class="scan-result-name">No QR Code Detected</div><div class="scan-result-detail">Could not find a valid QR code in this image.</div></div>`;
+    toast('No QR code found in image', 'err');
+    setTimeout(() => resetUploadUI(), 2500);
+  }
+}
+function resetUploadUI() {
+  document.getElementById('upload-drop-zone').style.display = 'block';
+  document.getElementById('upload-preview-area').style.display = 'none';
+}
+function processQR(data) {
+  let ticketId = null;
+  try { const parsed = JSON.parse(data); ticketId = parsed.id || parsed.ticketId || null; }
+  catch(e) { ticketId = data.trim().toUpperCase(); }
+  if (!ticketId) { showScanResult('invalid', null); return; }
+  ticketId = ticketId.trim().toUpperCase();
+  const ticket = STORE.tickets.find(t => t.id === ticketId);
+  if (!ticket) { showScanResult('invalid', null); return; }
+  const event = STORE.events.find(e => e.id === ticket.eventId);
+  if (ticket.status === 'used') { showScanResult('used', ticket, event); return; }
+  ticket.status = 'used';
+  ticket.checkInTime = new Date().toISOString();
+  saveStore();
+  showScanResult('valid', ticket, event);
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+}
+function showScanResult(status, ticket, event) {
+  const area = document.getElementById('scan-result-area');
+  const cfgs = {
+    valid:   { cls: 'valid',   icon: '✅', title: 'Check-In Successful!',   detail: ticket ? `${ticket.userName} · ${event?.title || 'Unknown Event'} · Seat ${ticket.seat} · ${ticket.type === 'vip' ? '⭐ VIP' : 'General'}` : '' },
+    used:    { cls: 'used',    icon: '✅', title: 'Already Checked In',      detail: ticket ? `${ticket.userName} · Seat ${ticket.seat} · checked in at ${ticket.checkInTime ? new Date(ticket.checkInTime).toLocaleTimeString() : 'earlier'}` : '' },
+    invalid: { cls: 'invalid', icon: '❌', title: 'Invalid Ticket',          detail: 'This QR code is not recognized in our system.' }
+  };
+  const c = cfgs[status];
+  area.innerHTML = `<div class="scan-result ${c.cls}"><span class="scan-result-icon">${c.icon}</span><div class="scan-result-name">${c.title}</div><div class="scan-result-detail">${c.detail}</div></div>`;
+  toast(c.title, status === 'valid' ? 'ok' : status === 'used' ? 'warn' : 'err');
+  if (activeScannerTab === 'upload') setTimeout(() => resetUploadUI(), 3000);
+}
+function manualCheckIn() {
+  const id = document.getElementById('manual-ticket-id').value.trim().toUpperCase();
+  if (!id) { toast('Please enter a ticket ID', 'err'); return; }
+  const ticket = STORE.tickets.find(t => t.id === id);
+  if (!ticket) { showScanResult('invalid', null); return; }
+  const event  = STORE.events.find(e => e.id === ticket.eventId);
+  if (ticket.status === 'used') { showScanResult('used', ticket, event); return; }
+  ticket.status = 'used'; ticket.checkInTime = new Date().toISOString();
+  saveStore(); showScanResult('valid', ticket, event);
+  document.getElementById('manual-ticket-id').value = '';
 }
 
+/* ── ANALYTICS ── */
+let charts = {};
+function renderAnalytics() {
+  const totalRevenue = STORE.tickets.reduce((sum, t) => {
+    const e = STORE.events.find(ev => ev.id === t.eventId);
+    return e ? sum + (t.type === 'vip' ? e.vipPrice : e.price) : sum;
+  }, 0);
+  const totalTickets = STORE.tickets.length;
+  const checkedIn    = STORE.tickets.filter(t => t.status === 'used').length;
+  document.getElementById('analytics-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-top"><div class="stat-icon purple">💰</div><span class="stat-change up">Revenue</span></div><div class="stat-value">₱${totalRevenue.toLocaleString()}</div><div class="stat-label">Total Revenue</div></div>
+    <div class="stat-card"><div class="stat-top"><div class="stat-icon blue">🎫</div><span class="stat-change up">+${totalTickets}</span></div><div class="stat-value">${totalTickets}</div><div class="stat-label">Tickets Sold</div></div>
+    <div class="stat-card"><div class="stat-top"><div class="stat-icon teal">✅</div><span class="stat-change up">${checkedIn}</span></div><div class="stat-value">${checkedIn}</div><div class="stat-label">Checked In</div></div>
+    <div class="stat-card"><div class="stat-top"><div class="stat-icon amber">📅</div><span class="stat-change up">${STORE.events.length}</span></div><div class="stat-value">${STORE.events.length}</div><div class="stat-label">Total Events</div></div>`;
+  buildCharts();
+}
+function buildCharts() {
+  if (!document.getElementById('sales-chart')) return;
+  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
+  charts = {};
+  const days = [], salesData = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days.push(d.toLocaleDateString('en', { month: 'short', day: 'numeric' }));
+    salesData.push(0);
+  }
+  STORE.tickets.forEach(t => {
+    const d = new Date(t.purchaseDate);
+    const label = d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+    const idx = days.indexOf(label);
+    if (idx >= 0) salesData[idx]++;
+  });
+  charts.sales = new Chart(document.getElementById('sales-chart'), {
+    type: 'line',
+    data: { labels: days, datasets: [{ label: 'Tickets Sold', data: salesData, fill: true, borderColor: 'rgb(108,92,231)', backgroundColor: 'rgba(108,92,231,0.08)', borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.4 }] },
+    options: { responsive: true, interaction: { intersect: false, mode: 'index' }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(108,92,231,0.07)' }, ticks: { color: '#9490c4', maxTicksLimit: 8, font: { size: 11 } } }, y: { grid: { color: 'rgba(108,92,231,0.07)' }, ticks: { color: '#9490c4', font: { size: 11 } }, beginAtZero: true } } }
+  });
+  const cats = {};
+  STORE.events.forEach(e => { cats[e.category] = (cats[e.category] || 0) + getTakenSeats(e.id).size; });
+  charts.cat = new Chart(document.getElementById('category-chart'), {
+    type: 'doughnut',
+    data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: ['rgba(108,92,231,0.8)','rgba(9,132,227,0.8)','rgba(0,206,201,0.8)','rgba(253,203,110,0.8)','rgba(225,112,85,0.8)','rgba(253,121,168,0.8)'], borderColor: '#0d0d1a', borderWidth: 3 }] },
+    options: { responsive: true, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { color: '#9490c4', padding: 16, font: { size: 12 } } } } }
+  });
+  const evNames = STORE.events.slice(0,6).map(e => e.title.substring(0,16) + '…');
+  const evSold  = STORE.events.slice(0,6).map(e => getTakenSeats(e.id).size);
+  const evChkIn = STORE.events.slice(0,6).map(e => STORE.tickets.filter(t => t.eventId === e.id && t.status === 'used').length);
+  charts.checkin = new Chart(document.getElementById('checkin-chart'), {
+    type: 'bar',
+    data: { labels: evNames, datasets: [{ label: 'Seats Sold', data: evSold, backgroundColor: 'rgba(108,92,231,0.6)', borderRadius: 6, borderSkipped: false }, { label: 'Checked In', data: evChkIn, backgroundColor: 'rgba(0,206,201,0.6)', borderRadius: 6, borderSkipped: false }] },
+    options: { responsive: true, plugins: { legend: { labels: { color: '#9490c4', font: { size: 12 } } } }, scales: { x: { grid: { display: false }, ticks: { color: '#9490c4', font: { size: 10 } } }, y: { grid: { color: 'rgba(108,92,231,0.07)' }, ticks: { color: '#9490c4', font: { size: 11 } }, beginAtZero: true } } }
+  });
+}
+
+/* ── NOTIFICATIONS ── */
+function getNotifications() { return JSON.parse(localStorage.getItem('notifications') || '[]'); }
 function saveNotification(n) {
   const notes = getNotifications();
   notes.unshift(n);
