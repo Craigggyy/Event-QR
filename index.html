@@ -3,26 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EventPass — Sign In</title>
+<title>EventPass — Discover Events</title>
 <link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="landing-body">
 
-<!-- ═══════════════ AUTH PAGE ═══════════════ -->
-<div id="auth-page">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <div class="auth-logo-icon">🎫</div>
-      <h1>EventPass</h1>
+<div id="landing-page">
+
+  <!-- NAVBAR -->
+  <header class="lp-nav">
+    <div class="lp-nav-inner">
+      <div class="lp-logo">
+        <div class="lp-logo-mark">🎫</div>
+        <span class="lp-logo-text">Event<em>Pass</em></span>
+      </div>
+      <div class="lp-nav-actions">
+        <button class="btn-ghost-outline" onclick="openAuth('login')">Sign In</button>
+        <button class="btn-cta" onclick="openAuth('register')">Get Started →</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="lp-hero">
+    <div class="lp-hero-bg">
+      <div class="lp-orb lp-orb-1"></div>
+      <div class="lp-orb lp-orb-2"></div>
+      <div class="lp-orb lp-orb-3"></div>
+      <div class="lp-grid-overlay"></div>
+    </div>
+    <div class="lp-hero-content">
+      <div class="lp-hero-badge">🇵🇭 Philippines' Premier Event Platform</div>
+      <h1 class="lp-hero-title">Discover Events<br><span class="lp-hero-accent">Worth Attending</span></h1>
+      <p class="lp-hero-sub">Browse upcoming events, check seat availability, and book tickets — all in one place.</p>
+      <div class="lp-hero-search">
+        <span class="lp-search-icon">🔍</span>
+        <input type="text" id="hero-search" placeholder="Search events, artists, venues…" oninput="filterLandingEvents()">
+      </div>
+      <div class="lp-filter-row" id="lp-filters">
+        <button class="lp-chip active" onclick="setLandingFilter('all',this)">All</button>
+        <button class="lp-chip" onclick="setLandingFilter('Music',this)">🎵 Music</button>
+        <button class="lp-chip" onclick="setLandingFilter('Tech',this)">💻 Tech</button>
+        <button class="lp-chip" onclick="setLandingFilter('Art',this)">🎨 Art</button>
+        <button class="lp-chip" onclick="setLandingFilter('Food',this)">🍜 Food</button>
+        <button class="lp-chip" onclick="setLandingFilter('Sports',this)">🏅 Sports</button>
+        <button class="lp-chip" onclick="setLandingFilter('Business',this)">💼 Business</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- EVENTS SECTION -->
+  <section class="lp-events-section">
+    <div class="lp-section-header">
+      <div>
+        <h2 class="lp-section-title">Upcoming Events</h2>
+        <p class="lp-section-sub">Click any event to see details and seat availability</p>
+      </div>
+      <div class="lp-events-count" id="lp-events-count">6 events</div>
+    </div>
+    <div class="lp-events-grid" id="lp-events-grid"></div>
+  </section>
+
+  <!-- FOOTER CTA -->
+  <section class="lp-footer-cta">
+    <div class="lp-footer-cta-inner">
+      <div class="lp-footer-icon">🎫</div>
+      <h3>Ready to book your spot?</h3>
+      <p>Create a free account to purchase tickets, get QR codes, and manage your bookings.</p>
+      <div class="lp-footer-cta-btns">
+        <button class="btn-cta btn-cta-lg" onclick="openAuth('register')">Create Free Account</button>
+        <button class="btn-ghost-outline btn-ghost-lg" onclick="openAuth('login')">Already have an account</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- EVENT DETAIL DRAWER -->
+<div id="lp-drawer-bg" class="lp-drawer-bg" onclick="closeDrawer()">
+  <div id="lp-drawer" class="lp-drawer" onclick="event.stopPropagation()">
+    <button class="lp-drawer-close" onclick="closeDrawer()">✕</button>
+    <div id="lp-drawer-content"></div>
+    <div class="lp-drawer-cta">
+      <p class="lp-drawer-cta-note">Sign in or create an account to purchase tickets</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-cta" style="flex:1;min-width:140px" onclick="openAuth('register')">Get Tickets →</button>
+        <button class="btn-ghost-outline" style="flex:1;min-width:120px" onclick="openAuth('login')">Sign In</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div id="auth-overlay" class="auth-overlay" onclick="closeAuthOverlay(event)">
+  <div class="auth-modal" onclick="event.stopPropagation()">
+    <button class="auth-modal-close" onclick="closeAuth()">✕</button>
+
+    <div class="auth-modal-logo">
+      <div class="auth-logo-mark">🎫</div>
+      <h2>EventPass</h2>
       <p>Your all-in-one event ticketing platform</p>
     </div>
 
     <div class="auth-tabs">
-      <div class="auth-tab active" onclick="switchAuthTab('login')">Sign In</div>
-      <div class="auth-tab" onclick="switchAuthTab('register')">Create Account</div>
+      <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</div>
+      <div class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Create Account</div>
     </div>
 
-    <!-- LOGIN -->
     <div id="login-form">
       <div class="form-group">
         <label class="form-label">Email Address</label>
@@ -37,15 +126,14 @@
         <input type="checkbox" id="remember">
         <label for="remember">Remember me for 30 days</label>
       </div>
-      <button class="btn btn-primary btn-full btn-lg" onclick="doLogin()">Sign In →</button>
-      <div style="text-align:center;margin-top:20px;font-size:13px;color:var(--t3);line-height:1.8">
-        <strong style="color:var(--t2)">Demo Accounts</strong><br>
-        Admin: <b style="color:var(--p2)">admin@demo.com</b> / <b style="color:var(--p2)">admin123</b><br>
-        User:&nbsp;&nbsp;<b style="color:var(--p2)">user@demo.com</b> / <b style="color:var(--p2)">user123</b>
+      <button class="btn-cta btn-full" onclick="doLogin()">Sign In →</button>
+      <div class="demo-creds">
+        <div class="demo-creds-title">Demo Accounts</div>
+        <div class="demo-creds-item">Admin: <span class="demo-creds-val">admin@demo.com / admin123</span></div>
+        <div class="demo-creds-item">User: <span class="demo-creds-val">user@demo.com / user123</span></div>
       </div>
     </div>
 
-    <!-- REGISTER -->
     <div id="register-form" style="display:none">
       <div class="form-row">
         <div class="form-group">
@@ -72,71 +160,238 @@
           <option value="admin">Event Organizer — I want to manage events</option>
         </select>
       </div>
-      <button class="btn btn-primary btn-full btn-lg" onclick="doRegister()">Create Account →</button>
+      <button class="btn-cta btn-full" onclick="doRegister()">Create Account →</button>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
 <div id="toast-container"></div>
 
 <script src="functions.js"></script>
 <script>
-/* ── Redirect if already logged in ─────────────────────── */
 (function() {
   const s = getSession();
-  if (s) {
-    window.location.href = s.role === 'admin' ? 'admin.html' : 'attendee.html';
-  }
+  if (s) window.location.href = s.role === 'admin' ? 'admin.html' : 'attendee.html';
 })();
 
-/* ── Tab switch ─────────────────────────────────────────── */
+let landingFilter = 'all';
+
+function setLandingFilter(cat, el) {
+  landingFilter = cat;
+  document.querySelectorAll('.lp-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  filterLandingEvents();
+}
+
+function filterLandingEvents() {
+  const q = (document.getElementById('hero-search').value || '').toLowerCase();
+  const grid = document.getElementById('lp-events-grid');
+  const count = document.getElementById('lp-events-count');
+  const cards = grid.querySelectorAll('.lp-event-card');
+  let visible = 0;
+  cards.forEach(card => {
+    const catMatch = landingFilter === 'all' || card.dataset.category === landingFilter;
+    const textMatch = !q || card.dataset.search.includes(q);
+    const show = catMatch && textMatch;
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  count.textContent = visible + (visible === 1 ? ' event' : ' events');
+}
+
+function renderLandingEvents() {
+  const grid = document.getElementById('lp-events-grid');
+  grid.innerHTML = '';
+  STORE.events.forEach((ev, i) => {
+    const avail = ev.capacity - ev.sold;
+    const pct = Math.round((ev.sold / ev.capacity) * 100);
+    const soldOut = avail <= 0;
+    const almostFull = pct >= 70;
+    const dateObj = new Date(ev.date);
+    const month = dateObj.toLocaleString('en', { month: 'short' }).toUpperCase();
+    const day = dateObj.getDate();
+
+    let statusBadge = soldOut
+      ? '<span class="lp-badge lp-badge-sold">Sold Out</span>'
+      : almostFull
+        ? '<span class="lp-badge lp-badge-hot">🔥 Almost Full</span>'
+        : '<span class="lp-badge lp-badge-avail">✓ Available</span>';
+
+    const priceStr = ev.price === 0
+      ? '<span class="lp-price-free">Free Entry</span>'
+      : '<span class="lp-price">₱' + ev.price.toLocaleString() + '</span>';
+
+    const card = document.createElement('div');
+    card.className = 'lp-event-card';
+    card.dataset.category = ev.category;
+    card.dataset.search = (ev.title + ' ' + ev.category + ' ' + ev.venue).toLowerCase();
+    card.style.animationDelay = (i * 0.07) + 's';
+    card.onclick = () => openEventDrawer(ev.id);
+    card.innerHTML = `
+      <div class="lp-event-thumb" style="background:${ev.color}20;border-bottom:1px solid ${ev.color}33">
+        <div class="lp-thumb-glow" style="background:${ev.color}"></div>
+        <div class="lp-event-emoji">${ev.emoji}</div>
+        <div class="lp-event-date-pill">
+          <span class="lp-date-month">${month}</span>
+          <span class="lp-date-day">${day}</span>
+        </div>
+        <div class="lp-event-cat-pill" style="border-color:${ev.color}55;color:${ev.color};background:${ev.color}18">${ev.category}</div>
+      </div>
+      <div class="lp-event-body">
+        <div class="lp-event-status-row">${statusBadge}</div>
+        <h3 class="lp-event-title">${ev.title}</h3>
+        <div class="lp-event-meta">
+          <span class="lp-meta-item">📍 ${ev.venue.split(',')[0]}</span>
+          <span class="lp-meta-item">⏰ ${ev.time}</span>
+        </div>
+        <p class="lp-event-desc">${ev.desc}</p>
+        <div class="lp-event-footer">
+          <div class="lp-event-pricing">
+            ${priceStr}
+            ${ev.vipPrice ? '<span class="lp-price-vip">VIP ₱' + ev.vipPrice.toLocaleString() + '</span>' : ''}
+          </div>
+          <div class="lp-seat-info">
+            <span class="lp-seat-count">${avail}/${ev.capacity} seats left</span>
+            <div class="lp-seat-bar"><div class="lp-seat-fill" style="width:${pct}%;background:${soldOut?'var(--err)':almostFull?'var(--warn)':'var(--ok)'}"></div></div>
+          </div>
+        </div>
+        <button class="lp-view-btn">View Details & Seats →</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function openEventDrawer(eventId) {
+  const ev = STORE.events.find(e => e.id === eventId);
+  if (!ev) return;
+  const avail = ev.capacity - ev.sold;
+  const pct = Math.round((ev.sold / ev.capacity) * 100);
+  const dateObj = new Date(ev.date);
+  const dateStr = dateObj.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  document.getElementById('lp-drawer-content').innerHTML = `
+    <div class="drawer-hero" style="background:linear-gradient(135deg,${ev.color}30,${ev.color}10)">
+      <div class="drawer-emoji-wrap" style="background:${ev.color}22;border-color:${ev.color}44"><span style="font-size:64px">${ev.emoji}</span></div>
+      <div class="drawer-hero-info">
+        <span class="drawer-cat" style="background:${ev.color}22;color:${ev.color};border-color:${ev.color}44">${ev.category}</span>
+        <h2 class="drawer-title">${ev.title}</h2>
+      </div>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-section">
+        <h4 class="drawer-label">About This Event</h4>
+        <p class="drawer-desc">${ev.desc}</p>
+      </div>
+      <div class="drawer-meta-grid">
+        <div class="drawer-meta-item"><span>📅</span><div><strong>${dateStr}</strong><small>Date</small></div></div>
+        <div class="drawer-meta-item"><span>⏰</span><div><strong>${ev.time}</strong><small>Start Time</small></div></div>
+        <div class="drawer-meta-item"><span>📍</span><div><strong>${ev.venue}</strong><small>Venue</small></div></div>
+        <div class="drawer-meta-item"><span>🎟</span><div><strong>${avail} remaining</strong><small>of ${ev.capacity} seats</small></div></div>
+      </div>
+      <div class="drawer-section">
+        <h4 class="drawer-label">Seat Availability</h4>
+        <div class="drawer-seat-bar-wrap">
+          <div class="drawer-seat-bar-bg"><div class="drawer-seat-bar-fill" style="width:${pct}%"></div></div>
+          <div class="drawer-seat-stats">
+            <span>${ev.sold} booked</span><span>${pct}% full</span><span>${avail} available</span>
+          </div>
+        </div>
+        <div class="drawer-mini-map">${generateMiniSeatMap(ev)}</div>
+      </div>
+      <div class="drawer-section">
+        <h4 class="drawer-label">Pricing</h4>
+        <div class="drawer-pricing">
+          <div class="drawer-price-row">
+            <div><div class="drawer-price-type">General Admission</div><div class="drawer-price-note">Rows C–J</div></div>
+            <div class="drawer-price-amt">${ev.price === 0 ? '<span style="color:var(--ok)">FREE</span>' : '₱' + ev.price.toLocaleString()}</div>
+          </div>
+          ${ev.vipPrice ? `<div class="drawer-price-row drawer-vip-row">
+            <div><div class="drawer-price-type">⭐ VIP</div><div class="drawer-price-note">Rows A–B · Premium seating</div></div>
+            <div class="drawer-price-amt">₱${ev.vipPrice.toLocaleString()}</div>
+          </div>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('lp-drawer-bg').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function generateMiniSeatMap(ev) {
+  const taken = getTakenSeats(ev.id);
+  const rows = ['A','B','C','D','E','F','G','H','I','J'];
+  let html = '<div class="mini-stage">STAGE</div><div class="mini-rows">';
+  rows.forEach(row => {
+    html += '<div class="mini-row">';
+    for (let c = 1; c <= 10; c++) {
+      const id = row + c;
+      const cls = taken.has(id) ? 'mini-taken' : ['A','B'].includes(row) ? 'mini-vip' : 'mini-avail';
+      html += `<div class="mini-seat ${cls}" title="Seat ${id}"></div>`;
+    }
+    html += '</div>';
+  });
+  html += '</div><div class="mini-legend"><span><i class="mini-dot mini-avail"></i>Available</span><span><i class="mini-dot mini-vip"></i>VIP</span><span><i class="mini-dot mini-taken"></i>Taken</span></div>';
+  return html;
+}
+
+function closeDrawer() {
+  document.getElementById('lp-drawer-bg').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function openAuth(tab) {
+  closeDrawer();
+  document.getElementById('auth-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  switchAuthTab(tab);
+}
+
+function closeAuth() {
+  document.getElementById('auth-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function closeAuthOverlay(e) {
+  if (e.target === document.getElementById('auth-overlay')) closeAuth();
+}
+
 function switchAuthTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach((t, i) =>
-    t.classList.toggle('active', i === (tab === 'login' ? 0 : 1))
-  );
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
   document.getElementById('login-form').style.display    = tab === 'login'    ? 'block' : 'none';
   document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
 }
 
-/* ── Login ──────────────────────────────────────────────── */
 function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
   if (!email || !pass) { toast('Please enter email and password', 'err'); return; }
-
   const user = STORE.users.find(u => u.email === email && u.password === pass);
   if (!user) { toast('Invalid email or password', 'err'); return; }
-
   setSession(user);
-  toast(`Welcome back, ${user.name.split(' ')[0]}! 👋`, 'ok');
-  setTimeout(() => {
-    window.location.href = user.role === 'admin' ? 'admin.html' : 'attendee.html';
-  }, 600);
+  toast('Welcome back, ' + user.name.split(' ')[0] + '! 👋', 'ok');
+  setTimeout(() => { window.location.href = user.role === 'admin' ? 'admin.html' : 'attendee.html'; }, 600);
 }
 
-/* ── Register ───────────────────────────────────────────── */
 function doRegister() {
   const fname = document.getElementById('reg-fname').value.trim();
   const lname = document.getElementById('reg-lname').value.trim();
   const email = document.getElementById('reg-email').value.trim();
   const pass  = document.getElementById('reg-pass').value;
   const role  = document.getElementById('reg-role').value;
-
   if (!fname || !email || !pass) { toast('Please fill all required fields', 'err'); return; }
   if (STORE.users.find(u => u.email === email)) { toast('Email already registered', 'err'); return; }
   if (pass.length < 6) { toast('Password must be at least 6 characters', 'err'); return; }
-
-  const user = { id: 'u' + Date.now(), email, password: pass, name: `${fname} ${lname}`, role };
+  const user = { id: 'u' + Date.now(), email, password: pass, name: fname + ' ' + lname, role };
   STORE.users.push(user);
   saveStore();
   setSession(user);
-
-  toast('Account created successfully!', 'ok');
-  setTimeout(() => {
-    window.location.href = user.role === 'admin' ? 'admin.html' : 'attendee.html';
-  }, 600);
+  toast('Account created successfully! 🎉', 'ok');
+  setTimeout(() => { window.location.href = user.role === 'admin' ? 'admin.html' : 'attendee.html'; }, 600);
 }
+
+renderLandingEvents();
 </script>
 </body>
 </html>

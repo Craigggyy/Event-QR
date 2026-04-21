@@ -242,7 +242,7 @@
 
     <div class="sb-section">
       <div class="sb-section-label">Admin</div>
-      <div class="sb-nav-item" onclick="navigate('analytics')" id="nav-analytics">
+      <div class="sb-nav-item active" onclick="navigate('analytics')" id="nav-analytics">
         <span class="icon">📊</span><span class="sb-nav-label">Analytics</span>
       </div>
       <div class="sb-nav-item" onclick="navigate('scanner')" id="nav-scanner">
@@ -251,7 +251,7 @@
       <div class="sb-nav-item" onclick="navigate('admin-events')" id="nav-admin-events">
         <span class="icon">📋</span><span class="sb-nav-label">Manage Events</span>
       </div>
-      <div class="sb-nav-item active" onclick="navigate('attendees')" id="nav-attendees">
+      <div class="sb-nav-item" onclick="navigate('attendees')" id="nav-attendees">
         <span class="icon">👥</span><span class="sb-nav-label">Attendees</span>
       </div>
     </div>
@@ -584,8 +584,7 @@ let attStatusFilter = 'all';
   initModalListeners();
   window.onload = () => {
     setTimeout(() => {
-      navigate('attendees');
-      renderAttendees();
+      navigate('analytics');
     }, 100);
   };
 })();
