@@ -10,238 +10,186 @@
 
 <style>
 /* ═══════════════════════════════════════
-   CAROUSEL / SLIDER LAYOUT
+   LANDSCAPE CARD GRID
 ═══════════════════════════════════════ */
-.lp-carousel-wrapper {
-  position: relative;
-  padding: 0 56px;
-}
-
 .lp-events-grid {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 20px;
-  overflow: hidden;
-  padding: 8px 4px 16px;
+  padding: 0 0 40px;
 }
 
-/* Carousel arrow buttons */
-.carousel-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-60%);
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.18);
-  background: rgba(20,20,40,0.85);
-  backdrop-filter: blur(10px);
-  color: #fff;
-  font-size: 22px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s, border-color 0.2s, transform 0.2s;
-  z-index: 10;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  line-height: 1;
-  padding: 0;
-}
-.carousel-arrow:hover {
-  background: rgba(255,255,255,0.15);
-  border-color: rgba(255,255,255,0.45);
-  transform: translateY(-60%) scale(1.1);
-}
-.carousel-arrow:active { transform: translateY(-60%) scale(0.96); }
-.carousel-arrow.left  { left: 0; }
-.carousel-arrow.right { right: 0; }
-.carousel-arrow:disabled {
-  opacity: 0.25;
-  cursor: default;
-  pointer-events: none;
-}
-
-/* ── POSTER-STYLE CARD ── */
+/* ── LANDSCAPE CARD ── */
 .lp-event-card {
-  background: var(--surface, #1a1a2e);
-  border-radius: 14px;
+  background: var(--surface, #12122a);
+  border-radius: 18px;
   overflow: hidden;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  flex: 0 0 220px;
   border: 1px solid rgba(255,255,255,0.07);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   animation: fadeUp 0.45s ease both;
 }
 .lp-event-card:hover {
-  transform: translateY(-7px);
-  box-shadow: 0 22px 52px rgba(0,0,0,0.45);
+  transform: translateY(-6px);
+  box-shadow: 0 24px 56px rgba(0,0,0,0.5);
 }
 
-/* Poster image area — 3:4 ratio */
+/* ── TOP POSTER AREA (landscape, ~16:9-ish) ── */
 .lp-event-thumb {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 4;
+  height: 200px;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 18px 18px 0 0;
 }
+
+/* Subtle gradient background fill */
 .lp-thumb-glow {
   position: absolute;
   inset: 0;
-  opacity: 0.18;
-  filter: blur(10px);
+  opacity: 0.25;
+  filter: blur(60px);
+  transform: scale(1.4);
 }
-.lp-event-emoji {
-  font-size: 80px;
-  z-index: 1;
-  filter: drop-shadow(0 4px 24px rgba(0,0,0,0.55));
-  transition: transform 0.3s ease;
-}
-.lp-event-card:hover .lp-event-emoji { transform: scale(1.12); }
 
-.lp-event-date-pill {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  background: rgba(0,0,0,0.72);
-  backdrop-filter: blur(8px);
-  border-radius: 8px;
-  padding: 5px 9px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* Big centered emoji */
+.lp-event-emoji {
+  font-size: 90px;
+  z-index: 1;
+  filter: drop-shadow(0 6px 24px rgba(0,0,0,0.5));
+  transition: transform 0.3s ease;
   line-height: 1;
-  z-index: 2;
-  border: 1px solid rgba(255,255,255,0.14);
 }
-.lp-date-month {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: rgba(255,255,255,0.7);
-  font-family: 'JetBrains Mono', monospace;
-}
-.lp-date-day {
-  font-size: 20px;
-  font-weight: 800;
-  color: #fff;
-  font-family: 'Syne', sans-serif;
-}
+.lp-event-card:hover .lp-event-emoji { transform: scale(1.1); }
+
+/* Category pill — top left */
 .lp-event-cat-pill {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  border: 1px solid;
-  z-index: 2;
-  backdrop-filter: blur(6px);
-}
-
-/* Card body */
-.lp-event-body {
-  padding: 13px 13px 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  flex: 1;
-}
-.lp-event-status-row { display: flex; }
-.lp-event-title {
-  font-size: 13px;
-  font-weight: 700;
-  font-family: 'Syne', sans-serif;
-  color: #fff;
-  line-height: 1.3;
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.lp-meta-item {
+  top: 14px;
+  left: 14px;
   font-size: 11px;
-  color: rgba(255,255,255,0.52);
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  backdrop-filter: blur(8px);
+  border: none;
+  z-index: 3;
   font-family: 'DM Sans', sans-serif;
 }
 
-/* Colored date badge */
-.lp-event-date-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 5px 9px;
-  border-radius: 5px;
-  font-family: 'JetBrains Mono', monospace;
-  letter-spacing: 0.2px;
-  width: fit-content;
-  margin-top: auto;
-}
-
-/* BUY TICKETS button */
-.lp-view-btn {
-  margin-top: 10px;
-  width: 100%;
-  padding: 10px 0;
-  background: #00c896;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: 'Syne', sans-serif;
-  transition: background 0.2s, transform 0.15s;
-}
-.lp-view-btn:hover { background: #00e6ad; transform: scale(1.02); }
-.lp-view-btn.sold-out {
-  background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.38);
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Slide animations */
-.lp-events-grid.sliding-left  { animation: slideLeft  0.38s cubic-bezier(.4,0,.2,1) both; }
-.lp-events-grid.sliding-right { animation: slideRight 0.38s cubic-bezier(.4,0,.2,1) both; }
-@keyframes slideLeft  { from { opacity:.5; transform:translateX(40px);  } to { opacity:1; transform:translateX(0); } }
-@keyframes slideRight { from { opacity:.5; transform:translateX(-40px); } to { opacity:1; transform:translateX(0); } }
-@keyframes fadeUp     { from { opacity:0;  transform:translateY(18px);  } to { opacity:1; transform:translateY(0); } }
-
-/* Dot indicators */
-.carousel-dots {
+/* Date box — top right (colored square) */
+.lp-event-date-pill {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  border-radius: 10px;
+  padding: 6px 12px;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 7px;
-  margin-top: 18px;
+  line-height: 1.1;
+  z-index: 3;
+  min-width: 46px;
 }
-.carousel-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.2);
-  cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
-  border: none;
-  padding: 0;
+.lp-date-month {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.9);
+  font-family: 'DM Sans', sans-serif;
 }
-.carousel-dot.active {
-  background: #00c896;
-  transform: scale(1.4);
+.lp-date-day {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  font-family: 'Syne', sans-serif;
+  line-height: 1;
+}
+
+/* ── CARD BODY ── */
+.lp-event-body {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  background: var(--surface, #12122a);
+}
+
+/* Status badge row — hidden on this layout, sold-out shown differently */
+.lp-event-status-row { display: none; }
+
+/* Title */
+.lp-event-title {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  color: #fff;
+  line-height: 1.3;
+  margin: 0 0 2px;
+  letter-spacing: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Venue line */
+.lp-meta-item {
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Bottom row: price left, seats right */
+.lp-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.lp-card-price {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: 'Syne', sans-serif;
+  color: #f5c518; /* yellow-gold like in screenshot */
+}
+.lp-card-price.free-price {
+  color: #00c896;
+}
+.lp-card-price.sold-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.06);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.lp-card-seats {
+  font-size: 12px;
+  color: rgba(255,255,255,0.35);
+  font-family: 'DM Sans', sans-serif;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ═══════════════════════════════════════
@@ -403,14 +351,7 @@
       </div>
       <div class="lp-events-count" id="lp-events-count">6 events</div>
     </div>
-
-    <!-- CAROUSEL -->
-    <div class="lp-carousel-wrapper">
-      <button class="carousel-arrow left"  id="arrow-left"  onclick="slideCarousel('left')"  aria-label="Previous">&#8249;</button>
-      <div class="lp-events-grid" id="lp-events-grid"></div>
-      <button class="carousel-arrow right" id="arrow-right" onclick="slideCarousel('right')" aria-label="Next">&#8250;</button>
-    </div>
-    <div class="carousel-dots" id="carousel-dots"></div>
+    <div class="lp-events-grid" id="lp-events-grid"></div>
   </section>
 
 </div>
@@ -524,153 +465,94 @@
   if (s) window.location.href = s.role === 'admin' ? 'admin.html' : 'attendee.html';
 })();
 
-/* ─────────────────────────────────────
-   CAROUSEL
-───────────────────────────────────── */
-const CARDS_PER_PAGE = 4;
-let carouselPage  = 0;
-let filteredEvents = [];
-let landingFilter  = 'all';
-
-function totalPages() {
-  return Math.max(1, Math.ceil(filteredEvents.length / CARDS_PER_PAGE));
-}
+let landingFilter = 'all';
 
 function setLandingFilter(cat, el) {
   landingFilter = cat;
   document.querySelectorAll('.lp-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
-  carouselPage = 0;
-  buildFilteredEvents();
-  renderCarouselPage();
-  updateCarouselUI();
+  filterLandingEvents();
 }
 
 function filterLandingEvents() {
-  carouselPage = 0;
-  buildFilteredEvents();
-  renderCarouselPage();
-  updateCarouselUI();
-}
-
-function buildFilteredEvents() {
-  const q = (document.getElementById('hero-search').value || '').toLowerCase();
-  filteredEvents = STORE.events.filter(ev => {
-    const catMatch  = landingFilter === 'all' || ev.category === landingFilter;
-    const textMatch = !q || (ev.title + ' ' + ev.category + ' ' + ev.venue).toLowerCase().includes(q);
-    return catMatch && textMatch;
-  });
-}
-
-function slideCarousel(dir) {
-  const grid = document.getElementById('lp-events-grid');
-  if (dir === 'right' && carouselPage < totalPages() - 1) {
-    carouselPage++;
-    triggerSlideAnim(grid, 'sliding-left');
-  } else if (dir === 'left' && carouselPage > 0) {
-    carouselPage--;
-    triggerSlideAnim(grid, 'sliding-right');
-  }
-  renderCarouselPage();
-  updateCarouselUI();
-}
-
-function goToPage(page) {
-  const grid = document.getElementById('lp-events-grid');
-  const animClass = page > carouselPage ? 'sliding-left' : 'sliding-right';
-  carouselPage = page;
-  triggerSlideAnim(grid, animClass);
-  renderCarouselPage();
-  updateCarouselUI();
-}
-
-function triggerSlideAnim(el, cls) {
-  el.classList.remove('sliding-left', 'sliding-right');
-  void el.offsetWidth; // force reflow
-  el.classList.add(cls);
-  setTimeout(() => el.classList.remove('sliding-left', 'sliding-right'), 420);
-}
-
-function updateCarouselUI() {
-  document.getElementById('arrow-left').disabled  = carouselPage === 0;
-  document.getElementById('arrow-right').disabled = carouselPage >= totalPages() - 1;
-  document.getElementById('lp-events-count').textContent =
-    filteredEvents.length + (filteredEvents.length === 1 ? ' event' : ' events');
-
-  const dotsEl = document.getElementById('carousel-dots');
-  dotsEl.innerHTML = '';
-  for (let i = 0; i < totalPages(); i++) {
-    const btn = document.createElement('button');
-    btn.className = 'carousel-dot' + (i === carouselPage ? ' active' : '');
-    btn.setAttribute('aria-label', 'Page ' + (i + 1));
-    const pg = i;
-    btn.onclick = () => goToPage(pg);
-    dotsEl.appendChild(btn);
-  }
-}
-
-function renderCarouselPage() {
+  const q     = (document.getElementById('hero-search').value || '').toLowerCase();
   const grid  = document.getElementById('lp-events-grid');
+  const count = document.getElementById('lp-events-count');
+  const cards = grid.querySelectorAll('.lp-event-card');
+  let visible = 0;
+  cards.forEach(card => {
+    const catMatch  = landingFilter === 'all' || card.dataset.category === landingFilter;
+    const textMatch = !q || card.dataset.search.includes(q);
+    const show = catMatch && textMatch;
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  count.textContent = visible + (visible === 1 ? ' event' : ' events');
+}
+
+function renderLandingEvents() {
+  const grid = document.getElementById('lp-events-grid');
   grid.innerHTML = '';
-  const start = carouselPage * CARDS_PER_PAGE;
-  const page  = filteredEvents.slice(start, start + CARDS_PER_PAGE);
 
-  if (page.length === 0) {
-    grid.innerHTML = '<p style="color:rgba(255,255,255,0.3);font-family:DM Sans,sans-serif;padding:40px 0;">No events found.</p>';
-    return;
-  }
+  STORE.events.forEach((ev, i) => {
+    const avail      = ev.capacity - ev.sold;
+    const pct        = Math.round((ev.sold / ev.capacity) * 100);
+    const soldOut    = avail <= 0;
+    const dateObj    = new Date(ev.date);
+    const month      = dateObj.toLocaleString('en', { month: 'short' }).toUpperCase();
+    const day        = dateObj.getDate();
 
-  page.forEach((ev, i) => {
-    const avail   = ev.capacity - ev.sold;
-    const pct     = Math.round((ev.sold / ev.capacity) * 100);
-    const soldOut = avail <= 0;
-    const almostFull = pct >= 70;
-    const dateObj = new Date(ev.date);
-    const month   = dateObj.toLocaleString('en', { month: 'short' }).toUpperCase();
-    const day     = dateObj.getDate();
-    const dateLabel = dateObj.toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric'
-    }).toUpperCase();
-
-    const statusBadge = soldOut
-      ? '<span class="lp-badge lp-badge-sold">Sold Out</span>'
-      : almostFull
-        ? '<span class="lp-badge lp-badge-hot">🔥 Almost Full</span>'
-        : '<span class="lp-badge lp-badge-avail">✓ Available</span>';
-
-    const btnClass = soldOut ? 'lp-view-btn sold-out' : 'lp-view-btn';
-    const btnText  = soldOut ? 'SOLD OUT' : 'BUY TICKETS';
+    /* price display */
+    let priceHTML;
+    if (soldOut) {
+      priceHTML = '<span class="lp-card-price sold-price">SOLD OUT</span>';
+    } else if (ev.price === 0) {
+      priceHTML = '<span class="lp-card-price free-price">FREE</span>';
+    } else {
+      priceHTML = `<span class="lp-card-price">₱${ev.price.toLocaleString()}</span>`;
+    }
 
     const card = document.createElement('div');
-    card.className = 'lp-event-card';
-    card.style.animationDelay = (i * 0.06) + 's';
+    card.className        = 'lp-event-card';
+    card.dataset.category = ev.category;
+    card.dataset.search   = (ev.title + ' ' + ev.category + ' ' + ev.venue).toLowerCase();
+    card.style.animationDelay = (i * 0.07) + 's';
     card.onclick = () => openEventDrawer(ev.id);
+
     card.innerHTML = `
-      <div class="lp-event-thumb" style="background:${ev.color}20;border-bottom:1px solid ${ev.color}33">
+      <!-- POSTER / THUMB -->
+      <div class="lp-event-thumb" style="background:${ev.color}22;">
         <div class="lp-thumb-glow" style="background:${ev.color}"></div>
-        <div class="lp-event-emoji">${ev.emoji}</div>
-        <div class="lp-event-date-pill">
+
+        <!-- Category pill top-left -->
+        <div class="lp-event-cat-pill">${ev.category.toUpperCase()}</div>
+
+        <!-- Date box top-right -->
+        <div class="lp-event-date-pill" style="background:${ev.color};">
           <span class="lp-date-month">${month}</span>
           <span class="lp-date-day">${day}</span>
         </div>
-        <div class="lp-event-cat-pill" style="border-color:${ev.color}55;color:${ev.color};background:${ev.color}18">${ev.category}</div>
+
+        <!-- Big emoji center -->
+        <div class="lp-event-emoji">${ev.emoji}</div>
       </div>
+
+      <!-- BODY -->
       <div class="lp-event-body">
-        <div class="lp-event-status-row">${statusBadge}</div>
+        <div class="lp-event-status-row"></div>
         <h3 class="lp-event-title">${ev.title}</h3>
-        <span class="lp-meta-item">📍 ${ev.venue.split(',')[0]}</span>
-        <div class="lp-event-date-badge" style="background:${ev.color}cc">📅 ${dateLabel}</div>
-        <button class="${btnClass}" onclick="event.stopPropagation();openEventDrawer('${ev.id}')">${btnText}</button>
+        <span class="lp-meta-item">📍 ${ev.venue}</span>
+        <div class="lp-card-footer">
+          ${priceHTML}
+          <span class="lp-card-seats">${ev.sold}/${ev.capacity} seats</span>
+        </div>
       </div>
     `;
+
     grid.appendChild(card);
   });
-}
 
-function initCarousel() {
-  buildFilteredEvents();
-  renderCarouselPage();
-  updateCarouselUI();
+  filterLandingEvents();
 }
 
 /* ─────────────────────────────────────
@@ -791,8 +673,7 @@ function showForgotPassword() {
   document.getElementById('login-form').style.display     = 'none';
   document.getElementById('forgot-pw-form').style.display = 'block';
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-  // clear fields
-  ['fp-email','fp-newpass','fp-confirmpass'].forEach(id => {
+  ['fp-email', 'fp-newpass', 'fp-confirmpass'].forEach(id => {
     document.getElementById(id).value = '';
   });
   resetPwStrength();
@@ -815,12 +696,12 @@ function checkPwStrength(val) {
   if (/[^A-Za-z0-9]/.test(val)) score++;
 
   const levels = [
-    { w:'0%',   c:'transparent',  t:'Enter a password' },
-    { w:'20%',  c:'#ff4d4d',      t:'Very Weak' },
-    { w:'40%',  c:'#ff944d',      t:'Weak' },
-    { w:'60%',  c:'#ffd24d',      t:'Fair' },
-    { w:'80%',  c:'#8be14b',      t:'Strong' },
-    { w:'100%', c:'#00c896',      t:'Very Strong' },
+    { w:'0%',   c:'transparent', t:'Enter a password' },
+    { w:'20%',  c:'#ff4d4d',     t:'Very Weak' },
+    { w:'40%',  c:'#ff944d',     t:'Weak' },
+    { w:'60%',  c:'#ffd24d',     t:'Fair' },
+    { w:'80%',  c:'#8be14b',     t:'Strong' },
+    { w:'100%', c:'#00c896',     t:'Very Strong' },
   ];
   const lvl = val.length === 0 ? 0 : Math.min(score + 1, 5);
   fill.style.width      = levels[lvl].w;
@@ -830,11 +711,9 @@ function checkPwStrength(val) {
 }
 
 function resetPwStrength() {
-  const fill  = document.getElementById('pw-strength-fill');
-  const label = document.getElementById('pw-strength-label');
-  fill.style.width      = '0%';
-  label.textContent     = 'Enter a password';
-  label.style.color     = 'rgba(255,255,255,0.38)';
+  document.getElementById('pw-strength-fill').style.width  = '0%';
+  document.getElementById('pw-strength-label').textContent = 'Enter a password';
+  document.getElementById('pw-strength-label').style.color = 'rgba(255,255,255,0.38)';
 }
 
 function doChangePassword() {
@@ -842,10 +721,10 @@ function doChangePassword() {
   const newPass = document.getElementById('fp-newpass').value;
   const confirm = document.getElementById('fp-confirmpass').value;
 
-  if (!email)             { toast('Please enter your email address', 'err'); return; }
-  if (!newPass)           { toast('Please enter a new password', 'err'); return; }
-  if (newPass.length < 6) { toast('Password must be at least 6 characters', 'err'); return; }
-  if (newPass !== confirm){ toast('Passwords do not match', 'err'); return; }
+  if (!email)              { toast('Please enter your email address', 'err'); return; }
+  if (!newPass)            { toast('Please enter a new password', 'err'); return; }
+  if (newPass.length < 6)  { toast('Password must be at least 6 characters', 'err'); return; }
+  if (newPass !== confirm) { toast('Passwords do not match', 'err'); return; }
 
   const user = STORE.users.find(u => u.email === email);
   if (!user) { toast('No account found with that email', 'err'); return; }
@@ -890,7 +769,7 @@ function doRegister() {
 /* ─────────────────────────────────────
    INIT
 ───────────────────────────────────── */
-initCarousel();
+renderLandingEvents();
 </script>
 </body>
 </html>
