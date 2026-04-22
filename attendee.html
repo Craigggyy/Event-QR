@@ -47,18 +47,21 @@
       <div class="topbar-title" id="topbar-title">Browse Events</div>
       <div class="topbar-right">
         <div class="topbar-badge">Attendee</div>
-<div class="notify-btn" title="Notifications" onclick="toggleNotifications()">
-  🔔
-  <div class="notify-dot"></div>
-</div>      </div>
+        <div class="notify-btn" title="Notifications" onclick="toggleNotifications()">
+          🔔
+          <div class="notify-dot"></div>
+        </div>
+      </div>
     </div>
-<div id="notif-panel" class="notif-panel">
-  <div class="notif-header">
-    <strong>Notifications</strong>
-    <span onclick="toggleNotifications()" style="cursor:pointer">✕</span>
-  </div>
-  <div id="notif-list" class="notif-list"></div>
-</div>
+
+    <div id="notif-panel" class="notif-panel">
+      <div class="notif-header">
+        <strong>Notifications</strong>
+        <span onclick="toggleNotifications()" style="cursor:pointer">✕</span>
+      </div>
+      <div id="notif-list" class="notif-list"></div>
+    </div>
+
     <div class="page active" id="page-events">
       <div style="display:flex;gap:12px;margin-bottom:20px">
         <div class="search-bar" style="flex:1">
@@ -88,7 +91,10 @@
       <div id="my-tickets-list"></div>
     </div>
 
-  </div></div><div class="modal-bg" id="event-detail-modal">
+  </div>
+</div>
+
+<div class="modal-bg" id="event-detail-modal">
   <div class="modal modal-xl" id="event-detail-content"></div>
 </div>
 
@@ -184,7 +190,7 @@
     <div class="modal-body" id="ticket-view-body"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('ticket-view-modal')">Close</button>
-      <button class="btn btn-success" onclick="downloadTicket()">⬇ Download Ticket</button>
+      <button class="btn btn-success" id="download-ticket-btn" onclick="downloadTicket()">⬇ Download Ticket</button>
     </div>
   </div>
 </div>
@@ -206,7 +212,6 @@ let currentUser = null;
 
   initModalListeners();
 
-  // ✅ WAIT FOR FULL PAGE LAYOUT BEFORE FIRST RENDER
   window.onload = () => {
     requestAnimationFrame(() => {
       navigate('events');
@@ -222,15 +227,10 @@ function doLogout() {
 
 window.onNavigate = function(page) {
   if (page === 'events') {
-    requestAnimationFrame(() => {
-      renderEvents();
-    });
+    requestAnimationFrame(() => { renderEvents(); });
   }
-
   if (page === 'my-tickets') {
-    requestAnimationFrame(() => {
-      renderMyTickets();
-    });
+    requestAnimationFrame(() => { renderMyTickets(); });
   }
 };
 
@@ -254,10 +254,9 @@ function filterEvents() {
 }
 
 function renderEvents() {
-  setTimeout(() => {
-    filterEvents();
-  }, 0);
+  setTimeout(() => { filterEvents(); }, 0);
 }
+
 function renderEventCards(events) {
   const grid = document.getElementById('events-grid');
   if (!events.length) {
@@ -479,8 +478,6 @@ function selectPM(el, pm) {
   selectedPM = pm;
   document.querySelectorAll('.pm-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
-  
-  // Toggle form visibility
   document.getElementById('card-form').style.display = pm === 'card' ? 'block' : 'none';
   document.getElementById('paypal-form').style.display = pm === 'paypal' ? 'block' : 'none';
   document.getElementById('gcash-form').style.display = pm === 'gcash' ? 'block' : 'none';
@@ -490,7 +487,6 @@ function processPayment() {
   const e = STORE.events.find(ev => ev.id === currentEventId);
   const btn = document.getElementById('pay-btn');
   
-  // Basic validation check based on method
   if (selectedPM === 'card' && document.getElementById('card-num').value.length < 16) { toast('Invalid card info', 'err'); return; }
   if (selectedPM === 'paypal' && !document.getElementById('paypal-email').value.includes('@')) { toast('Invalid PayPal email', 'err'); return; }
   if (selectedPM === 'gcash' && document.getElementById('gcash-phone').value.length < 11) { toast('Invalid GCash number', 'err'); return; }
@@ -550,7 +546,11 @@ function renderMyTickets() {
   });
 }
 
+/* track which ticket is currently open in the modal */
+let _currentViewTicketId = null;
+
 function viewTicket(id) {
+  _currentViewTicketId = id;
   const t = STORE.tickets.find(tk => tk.id === id);
   const e = STORE.events.find(ev => ev.id === t.eventId);
   document.getElementById('ticket-view-body').innerHTML = `
@@ -565,6 +565,75 @@ function viewTicket(id) {
   openModal('ticket-view-modal');
   setTimeout(() => generateQR(`qr-full-${t.id}`, { id: t.id }, 120), 200);
 }
+
+/* ── DOWNLOAD TICKET ────────────────────────────────────── */
+function downloadTicket() {
+  const id = _currentViewTicketId;
+  if (!id) { toast('No ticket open', 'err'); return; }
+
+  const el = document.getElementById(`printable-${id}`);
+  if (!el) { toast('Ticket element not found', 'err'); return; }
+
+  const btn = document.getElementById('download-ticket-btn');
+  btn.textContent = '⏳ Generating…';
+  btn.disabled = true;
+
+  // Temporarily style the element for clean capture
+  const originalBg = el.style.background;
+  const originalColor = el.style.color;
+  const originalPadding = el.style.padding;
+  const originalBorderRadius = el.style.borderRadius;
+
+  el.style.background = '#1a1a2e';
+  el.style.color = '#ffffff';
+  el.style.padding = '32px';
+  el.style.borderRadius = '16px';
+
+  html2canvas(el, {
+    backgroundColor: '#1a1a2e',
+    scale: 2,          // retina quality
+    useCORS: true,
+    logging: false
+  }).then(canvas => {
+    // Restore original styles
+    el.style.background = originalBg;
+    el.style.color = originalColor;
+    el.style.padding = originalPadding;
+    el.style.borderRadius = originalBorderRadius;
+
+    // Build a filename from the ticket id
+    const t = STORE.tickets.find(tk => tk.id === id);
+    const ev = STORE.events.find(ev => ev.id === t.eventId);
+    const safeName = (ev ? ev.title : 'ticket').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const filename = `eventpass_${safeName}_${t.seat}.png`;
+
+    // Trigger download
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    btn.textContent = '✅ Downloaded!';
+    setTimeout(() => {
+      btn.textContent = '⬇ Download Ticket';
+      btn.disabled = false;
+    }, 2000);
+
+    toast('Ticket downloaded!', 'ok');
+  }).catch(err => {
+    console.error('html2canvas error:', err);
+    el.style.background = originalBg;
+    el.style.color = originalColor;
+    el.style.padding = originalPadding;
+    el.style.borderRadius = originalBorderRadius;
+
+    btn.textContent = '⬇ Download Ticket';
+    btn.disabled = false;
+    toast('Download failed. Try again.', 'err');
+  });
+}
+
+/* ── NOTIFICATIONS ──────────────────────────────────────── */
 function getNotifications() {
   return JSON.parse(localStorage.getItem('notifications') || '[]');
 }
@@ -575,21 +644,19 @@ function saveNotification(n) {
   localStorage.setItem('notifications', JSON.stringify(notes));
   updateNotificationUI();
 }
+
 function updateNotificationUI() {
-  const notes = getNotifications();
   const dot = document.querySelector('.notify-dot');
-
   if (!dot) return;
-
+  const notes = getNotifications();
   dot.style.display = notes.length ? 'block' : 'none';
 }
+
 window.addEventListener('DOMContentLoaded', () => {
   currentUser = requireAuth('user');
   if (!currentUser) return;
 
-  document.getElementById('sb-avatar').textContent =
-    currentUser.name.charAt(0).toUpperCase();
-
+  document.getElementById('sb-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
   document.getElementById('sb-name').textContent = currentUser.name;
 
   initModalListeners();
@@ -599,48 +666,39 @@ window.addEventListener('DOMContentLoaded', () => {
     renderEvents();
   }, 0);
 
-  // ✅ PUT IT HERE (IMPORTANT)
   updateNotificationUI();
 });
 
 function toggleNotifications() {
   const panel = document.getElementById('notif-panel');
-
   if (!panel) return;
-
   const isOpen = panel.style.display === 'block';
   panel.style.display = isOpen ? 'none' : 'block';
-
-  if (!isOpen) {
-    renderNotifications();
-  }
+  if (!isOpen) { renderNotifications(); }
 }
+
 function renderNotifications() {
   const list = document.getElementById('notif-list');
   const notes = getNotifications();
-
   if (!notes.length) {
     list.innerHTML = `<div class="notif-item">No notifications</div>`;
     return;
   }
-
   list.innerHTML = notes.map((n, i) => `
     <div class="notif-item" onclick="openNotification(${i})">
       ${n.message}
     </div>
   `).join('');
 }
+
 function openNotification(i) {
   const notes = getNotifications();
   alert(notes[i].message);
-
   notes.splice(i, 1);
   localStorage.setItem('notifications', JSON.stringify(notes));
-
   renderNotifications();
   updateNotificationUI();
 }
-
 </script>
 </body>
 </html>
